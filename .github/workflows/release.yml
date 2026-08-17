@@ -42,7 +42,7 @@ jobs:
       # secrets to the repo and set them in `env` here — no other change is needed:
       #   APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY,
       #   APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID
-      - uses: tauri-apps/tauri-action@v0
+      - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
