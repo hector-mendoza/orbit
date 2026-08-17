@@ -202,6 +202,10 @@ function encodeIco(sizes) {
 }
 writeFileSync(join(OUT, "icon.ico"), encodeIco([16, 32, 48, 64, 128, 256]));
 
+// Copy for the README header, so the doc image can't drift from the real app icon.
+mkdirSync(join(OUT, "..", "..", "docs"), { recursive: true });
+writeFileSync(join(OUT, "..", "..", "docs", "icon.png"), render(256));
+
 // iconset for `iconutil` (macOS .icns), written even on other platforms — harmless.
 const setDir = join(OUT, "orbit.iconset");
 mkdirSync(setDir, { recursive: true });

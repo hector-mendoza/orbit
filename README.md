@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/icon.png" width="120" height="120" alt="Orbit app icon: two pale capsule eyes on a dark navy rounded square">
+
 # Orbit
 
 **A desktop pet that shows what your Claude Code sessions are doing.**
