@@ -106,9 +106,10 @@ whatever binary is running, and a `target/debug` path breaks on the next `cargo 
 | **Click** | Opens the current project in your editor |
 | **Drag** | Moves the window |
 | **Right-click** | Cycles through the skins |
-| **Tray icon** | Skin picker, Open at Login, Show orb, Buy me a coffee, Quit |
+| **Tray icon** | Skin picker, Open at Login, Hide / Show orb, Buy me a coffee, Quit |
 
-There is no close button — quit from the tray.
+There is no close button. Hide the orb from the tray if you want it gone without
+quitting; quit from the tray to stop the process.
 
 Click and drag are told apart by how far the pointer travels while held (4px threshold).
 Tauri's `data-tauri-drag-region` can't be used for this: it begins a native drag on

@@ -274,6 +274,24 @@ fn set_autostart(app: &tauri::AppHandle, enabled: bool) -> bool {
     manager.is_enabled().unwrap_or(false)
 }
 
+/// Show or hide the orb window and keep the tray item's label in sync.
+///
+/// The item reads "Hide orb" while the window is up, and "Show orb" while it's
+/// hidden, so the tray is always the way back without quitting.
+fn set_orb_visible(app: &tauri::AppHandle, item: &MenuItem<Wry>, visible: bool) {
+    let Some(w) = app.get_webview_window("orb") else {
+        return;
+    };
+    if visible {
+        let _ = w.show();
+        let _ = w.set_always_on_top(true);
+        let _ = item.set_text("Hide orb");
+    } else {
+        let _ = w.hide();
+        let _ = item.set_text("Show orb");
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -296,7 +314,7 @@ pub fn run() {
             let current = read_skin();
 
             // The window has no decorations and is hidden from the dock/taskbar, so the
-            // tray is the only reliable way to quit, re-find, or restyle the orb.
+            // tray is the only reliable way to quit, hide, re-find, or restyle the orb.
             let mut skin_items = Vec::new();
             for (id, label) in SKINS {
                 skin_items.push((
@@ -327,7 +345,7 @@ pub fn run() {
                 None::<&str>,
             )?;
 
-            let show = MenuItem::with_id(app, "show", "Show orb", true, None::<&str>)?;
+            let show = MenuItem::with_id(app, "toggle-visible", "Hide orb", true, None::<&str>)?;
             let coffee = MenuItem::with_id(app, "coffee", "Buy me a coffee", true, None::<&str>)?;
             let quit_item = MenuItem::with_id(app, "quit", "Quit Orbit", true, None::<&str>)?;
             let sep = PredefinedMenuItem::separator(app)?;
@@ -348,6 +366,7 @@ pub fn run() {
             app.manage(SkinMenu(Mutex::new(skin_items)));
 
             let login_toggle = login_item.clone();
+            let show_toggle = show.clone();
             let mut tray = TrayIconBuilder::new()
                 .icon_as_template(true)
                 .tooltip("Orbit")
@@ -371,10 +390,10 @@ pub fn run() {
                         }
                         "quit" => app.exit(0),
                         "coffee" => open_support_url(),
-                        "show" => {
+                        "toggle-visible" => {
                             if let Some(w) = app.get_webview_window("orb") {
-                                let _ = w.show();
-                                let _ = w.set_always_on_top(true);
+                                let visible = w.is_visible().unwrap_or(true);
+                                set_orb_visible(app, &show_toggle, !visible);
                             }
                         }
                         _ => {}
