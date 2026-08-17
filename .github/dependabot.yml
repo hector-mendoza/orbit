@@ -1,0 +1,27 @@
+version: 2
+updates:
+  # The Tauri CLI is the only npm dependency, but it gates the whole build.
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels: ["ci"]
+
+  # Cargo.lock is committed, so these PRs are meaningful rather than noise.
+  - package-ecosystem: cargo
+    directory: "/src-tauri"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels: ["tauri"]
+    groups:
+      # Tauri ships its crates in lockstep; separate PRs per crate would conflict.
+      tauri:
+        patterns: ["tauri", "tauri-*"]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    labels: ["ci"]
