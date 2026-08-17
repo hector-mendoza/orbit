@@ -1,0 +1,25 @@
+# Auto-applied to PRs by .github/workflows/labeler.yml, based on which files changed.
+skin:
+  - changed-files:
+      - any-glob-to-any-file: "src/skin-*.js"
+renderer:
+  - changed-files:
+      - any-glob-to-any-file: ["src/render-core.js", "src/orb.js", "src/config.js"]
+tauri:
+  - changed-files:
+      - any-glob-to-any-file: ["src-tauri/**"]
+hooks:
+  - changed-files:
+      - any-glob-to-any-file: ["scripts/update-status.sh", "scripts/install.sh"]
+icons:
+  - changed-files:
+      - any-glob-to-any-file: ["scripts/gen-icons.mjs", "src-tauri/icons/**"]
+prototypes:
+  - changed-files:
+      - any-glob-to-any-file: ["src/proto-*"]
+documentation:
+  - changed-files:
+      - any-glob-to-any-file: ["**/*.md"]
+ci:
+  - changed-files:
+      - any-glob-to-any-file: [".github/**"]

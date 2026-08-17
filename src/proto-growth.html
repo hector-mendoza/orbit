@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Orbit — growth curve</title>
+    <link rel="stylesheet" href="proto.css" />
+    <style>
+      .row { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; margin-bottom: 24px; }
+      .cell .label { opacity: 0.75; }
+      .sub { font-size: 9px; opacity: 0.45; letter-spacing: 0.08em; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>growth curve — creature size vs. tokens spent</h1>
+      <div id="rows"></div>
+    </div>
+    <script src="config.js"></script>
+    <script src="render-core.js"></script>
+    <script src="skin-planet.js"></script>
+    <script src="skin-cat.js"></script>
+    <script src="skin-ghost.js"></script>
+    <script src="skin-bloub.js"></script>
+    <script>
+      const STEPS = [0, 200_000, 1_500_000, 8_000_000, 30_000_000, 100_000_000];
+      const cells = [];
+
+      for (const skin of ["planet", "cat", "ghost", "bloub"]) {
+        const row = document.createElement("div");
+        row.className = "row";
+        document.getElementById("rows").append(row);
+
+        for (const tokens of STEPS) {
+          const cell = document.createElement("div");
+          cell.className = "cell";
+
+          const view = document.createElement("canvas");
+          view.style.width = `${GRID_W * 2}px`;
+          view.style.height = `${GRID_H * 2}px`;
+          const dpr = Math.max(1, Math.round(window.devicePixelRatio || 1));
+          view.width = GRID_W * 2 * dpr;
+          view.height = GRID_H * 2 * dpr;
+
+          const label = document.createElement("div");
+          label.className = "label";
+          label.textContent = formatTokens(tokens);
+          const sub = document.createElement("div");
+          sub.className = "sub";
+          sub.textContent = `${skin} · ×${scaleFromGrowth(growthFromTokens(tokens)).toFixed(2)}`;
+
+          cell.append(view, label, sub);
+          row.append(cell);
+
+          const off = document.createElement("canvas");
+          off.width = GRID_W;
+          off.height = GRID_H;
+          const vctx = view.getContext("2d");
+          vctx.imageSmoothingEnabled = false;
+
+          cells.push({
+            skin,
+            scale: scaleFromGrowth(growthFromTokens(tokens)),
+            octx: off.getContext("2d"),
+            vctx,
+            view,
+            off,
+          });
+        }
+      }
+
+      function frame(now) {
+        for (const c of cells) {
+          c.octx.clearRect(0, 0, GRID_W, GRID_H);
+          const pose = basePose("working", now);
+          pose.scale = c.scale;
+          SKINS[c.skin].draw(c.octx, STATES.working, "working", now, 16, pose);
+          c.vctx.clearRect(0, 0, c.view.width, c.view.height);
+          c.vctx.drawImage(c.off, 0, 0, GRID_W, GRID_H, 0, 0, c.view.width, c.view.height);
+        }
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    </script>
+  </body>
+</html>

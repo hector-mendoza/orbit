@@ -1,0 +1,17 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Core permissions the orb window needs (dragging, show/hide, always-on-top).",
+  "windows": ["orb"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-set-always-on-top",
+    "core:window:allow-hide",
+    "core:window:allow-show",
+    "core:window:allow-set-position",
+    "core:window:allow-outer-position",
+    "core:webview:allow-internal-toggle-devtools",
+    "autostart:default"
+  ]
+}

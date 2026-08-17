@@ -1,0 +1,39 @@
+name: Feature request
+description: Suggest an idea, a new skin, or a behaviour change
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does it solve
+      description: >
+        What's awkward today? This matters more than the proposed solution — there may be
+        a simpler way to get you the same outcome.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - A new skin / creature
+        - Animation or visual behaviour
+        - Status detection (hooks, states)
+        - Growth / rewards
+        - Window behaviour (position, input, tray)
+        - Platform support (Windows / Linux)
+        - Other
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        **Proposing a skin?** They're pluggable — one file exposing `draw()` and
+        `burstOrigin()`. The main design constraint is that it needs one moving feature
+        that signals state *without* relying on colour, so it reads at a glance.

@@ -1,0 +1,66 @@
+name: Bug report
+description: Something isn't behaving the way it should
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Orbit is a visual widget, so a screenshot or short recording is usually worth more
+        than a paragraph. If the creature looks wrong, please attach an image.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: And what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start a Claude Code session in ...
+        2. The orb shows ...
+    validations:
+      required: true
+  - type: dropdown
+    id: skin
+    attributes:
+      label: Which skin
+      options: ["planet", "cat", "ghost", "bloub", "all of them", "not skin-specific"]
+    validations:
+      required: true
+  - type: dropdown
+    id: state
+    attributes:
+      label: Which state
+      options: ["working", "waiting", "done", "idle", "more than one", "not state-specific"]
+  - type: input
+    id: os
+    attributes:
+      label: OS and version
+      placeholder: "macOS 15.1 (Apple Silicon)"
+    validations:
+      required: true
+  - type: textarea
+    id: status-file
+    attributes:
+      label: Contents of ~/.claude-orb/status.json
+      description: >
+        Most issues are visible here. Redact the `cwd` if the path is sensitive.
+      render: json
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console output
+      description: >
+        If running via `npm run dev`, paste anything from the terminal. For the built app,
+        `log show --predicate 'process == "orbit"' --last 5m` may help.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: The hooks are registered in `~/.claude/settings.json`
+        - label: I restarted my Claude Code sessions after installing the hooks

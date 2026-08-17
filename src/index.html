@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Orbit</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="stage" title="Click to open the project">
+      <div id="creature">
+        <div id="glow" aria-hidden="true"></div>
+        <canvas id="orb" width="176" height="128"></canvas>
+      </div>
+      <div id="hud">
+        <span id="project">—</span>
+        <span id="dot" aria-hidden="true">·</span>
+        <span id="state"></span>
+        <span id="tokens"></span>
+      </div>
+    </div>
+    <script src="config.js"></script>
+    <script src="render-core.js"></script>
+    <script src="skin-planet.js"></script>
+    <script src="skin-cat.js"></script>
+    <script src="skin-ghost.js"></script>
+    <script src="skin-bloub.js"></script>
+    <script src="orb.js"></script>
+  </body>
+</html>

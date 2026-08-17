@@ -1,0 +1,23 @@
+{
+  "name": "orbit",
+  "private": true,
+  "version": "0.1.0",
+  "description": "A desktop pet that shows what your Claude Code sessions are doing",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "tauri": "tauri",
+    "install-hooks": "bash scripts/install.sh",
+    "preview": "python3 -m http.server 4317 --directory src",
+    "icons": "node scripts/gen-icons.mjs && iconutil -c icns src-tauri/icons/orbit.iconset -o src-tauri/icons/icon.icns && rm -rf src-tauri/icons/orbit.iconset",
+    "lint:rust": "cargo fmt --manifest-path src-tauri/Cargo.toml -- --check && cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.1.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hector-mendoza/orbit.git"
+  }
+}

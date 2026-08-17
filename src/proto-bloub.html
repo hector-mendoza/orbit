@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Orbit — Bloub prototype</title>
+    <link rel="stylesheet" href="proto.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>bloub (ink cloud) — dark body, light capsule eyes, rippling silhouette</h1>
+      <div class="grid" id="grid"></div>
+      <nav id="nav"></nav>
+    </div>
+    <script src="config.js"></script>
+    <script src="render-core.js"></script>
+    <script src="proto-scaffold.js"></script>
+    <script src="skin-bloub.js"></script>
+    <script src="proto-nav.js"></script>
+    <script>
+      const cells = run((cell, now, dt) => {
+        const pose = basePose(cell.state, now);
+        pose.scale = 1;
+        SKINS.bloub.draw(cell.octx, cell.cfg, cell.state, now, dt, pose);
+        maybeCelebrate(cell, now, ...SKINS.bloub.burstOrigin(1));
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Agent app: no Dock icon, no menu bar. Orbit lives in the tray only.
+	     Set here as well as at runtime so the icon never flashes in the Dock
+	     during launch before the activation policy is applied. -->
+	<key>LSUIElement</key>
+	<true/>
+</dict>
+</plist>

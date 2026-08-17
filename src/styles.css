@@ -1,0 +1,134 @@
+:root {
+  --glow-color: transparent;
+  --glow-strength: 0;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  /* No text selection or native drag on a window that is one big drag handle. */
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+
+#stage {
+  /* The whole window is the click target: click opens the project, drag moves it. */
+  cursor: pointer;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+#creature {
+  position: relative;
+  width: 176px;
+  height: 128px;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+/* Soft state glow behind the creature. Radial gradient rather than box-shadow so it
+   fades out cleanly on a transparent window with no visible edge. */
+#glow {
+  position: absolute;
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--glow-color) 55%, transparent) 0%,
+    color-mix(in srgb, var(--glow-color) 22%, transparent) 42%,
+    transparent 68%
+  );
+  opacity: var(--glow-strength);
+  transition: opacity 400ms ease, background 400ms ease;
+  pointer-events: none;
+}
+
+#orb {
+  position: relative;
+  width: 176px;
+  height: 128px;
+  /* Keep the upscaled pixel art hard-edged if the compositor ever resamples it. */
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+/* Project + state readout. Always visible, on its own pill so it stays legible over
+   any desktop wallpaper rather than depending on a text shadow. */
+#hud {
+  /* The canvas is taller than the creature drawn in it, so the pill has to be pulled
+     up into that empty band to sit right under the body. */
+  margin-top: -30px;
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  max-width: 100%;
+  padding: 3px 9px 4px;
+  border-radius: 999px;
+  background: rgba(22, 20, 28, 0.82);
+  border: 1px solid color-mix(in srgb, var(--glow-color) 35%, transparent);
+  pointer-events: none;
+  flex: none;
+}
+
+#project {
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  color: #f7f3ec;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#dot {
+  font-size: 10px;
+  color: rgba(247, 243, 236, 0.4);
+}
+
+#state {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--glow-color) 85%, #f7f3ec);
+}
+
+/* Token count — the reason the creature is the size it is. */
+#tokens {
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: rgba(247, 243, 236, 0.45);
+  white-space: nowrap;
+}
+
+#stage:hover /* Token count — the reason the creature is the size it is. */
+#tokens {
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: rgba(247, 243, 236, 0.45);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #glow {
+    transition: none;
+  }
+}
