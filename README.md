@@ -42,6 +42,36 @@ dozes off when nothing is happening. It grows as you use it.
 
 ## Install
 
+### Download the app
+
+Grab the `.dmg` from [**Releases**](https://github.com/hector-mendoza/orbit/releases),
+open it, and drag Orbit to Applications. Then wire up the hooks:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/hector-mendoza/orbit/main/scripts/install.sh | bash
+```
+
+That registers the Claude Code hooks and downloads the status writer into
+`~/.claude-orb/`. **Restart any running Claude Code sessions** afterwards.
+
+> [!IMPORTANT]
+> **macOS will say the app can't be verified.** Orbit isn't signed with an Apple
+> Developer certificate — that needs a paid account — so Gatekeeper blocks it the first
+> time with *"Apple could not verify Orbit is free of malware."*
+>
+> To open it anyway: try to open Orbit once and dismiss the warning, then go to
+> **System Settings → Privacy & Security**, scroll to the message about Orbit, and click
+> **Open Anyway**. Or from a terminal:
+>
+> ```bash
+> xattr -dr com.apple.quarantine /Applications/Orbit.app
+> ```
+>
+> Once per installed version. If you'd rather not trust a prebuilt binary, building from
+> source below avoids the question entirely.
+
+### Or build from source
+
 ```bash
 git clone https://github.com/hector-mendoza/orbit.git
 cd orbit
@@ -50,7 +80,7 @@ npm run install-hooks    # writes ~/.claude-orb/ and registers the Claude Code h
 npm run dev              # first build takes a few minutes; later runs are fast
 ```
 
-`npm run install-hooks` appends to whatever hooks you already have in
+Either way, `install-hooks` appends to whatever hooks you already have in
 `~/.claude/settings.json`, backs the file up first, and is safe to re-run — Orbit's own
 entries are replaced rather than duplicated. **Restart any running Claude Code sessions**
 so they pick the hooks up.

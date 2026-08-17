@@ -116,6 +116,28 @@ exactly was used. Most permissive licenses require their copyright notice to tra
 the work, so this isn't just courtesy. Please also check the license actually permits
 reuse before opening the PR.
 
+## Cutting a release
+
+Releases are built by CI, not by hand — push a version tag:
+
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+[`.github/workflows/release.yml`](.github/workflows/release.yml) builds a **universal**
+macOS binary (Intel + Apple Silicon), creates a **draft** release, and attaches the `.dmg`.
+Review the draft, then publish it.
+
+Builds are **unsigned and un-notarized**, so downloaders hit a Gatekeeper warning; the
+release notes explain the workaround. To fix that properly, add the Apple secrets
+(`APPLE_CERTIFICATE`, `APPLE_SIGNING_IDENTITY`, `APPLE_ID`, `APPLE_PASSWORD`,
+`APPLE_TEAM_ID`, …) to the repository and reference them in the workflow's `env` — the
+workflow is written so that's the only change needed.
+
+Bump the version in **both** `package.json` and `src-tauri/tauri.conf.json` before tagging;
+the tag and the bundle version should agree.
+
 ## Style
 
 - Match the surrounding code; there's no linter for the JS beyond a parse check.

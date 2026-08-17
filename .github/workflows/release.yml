@@ -1,0 +1,87 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build and release (e.g. v0.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    name: macOS (universal)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          # Both targets are needed to link a universal binary, so the download works on
+          # Intel Macs as well as Apple Silicon.
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - run: npm ci
+
+      # Builds, creates the GitHub Release, and uploads the .dmg + .app.tar.gz to it.
+      #
+      # The build is UNSIGNED and NOT NOTARIZED. To change that later, add the Apple
+      # secrets to the repo and set them in `env` here — no other change is needed:
+      #   APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY,
+      #   APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.event.inputs.tag || github.ref_name }}
+          releaseName: "Orbit ${{ github.event.inputs.tag || github.ref_name }}"
+          releaseDraft: true
+          prerelease: false
+          args: --target universal-apple-darwin
+          releaseBody: |
+            ## Install
+
+            Download the `.dmg` below, open it, and drag **Orbit** to Applications.
+
+            ### macOS will say the app can't be verified
+
+            Orbit isn't signed with an Apple Developer certificate (that requires a paid
+            account), so Gatekeeper blocks it on first launch with *"Apple could not
+            verify Orbit is free of malware."* This is expected. To open it anyway:
+
+            1. Try to open Orbit once, and dismiss the warning.
+            2. **System Settings → Privacy & Security**
+            3. Scroll to the message about Orbit and click **Open Anyway**.
+
+            Or, from a terminal:
+
+            ```bash
+            xattr -dr com.apple.quarantine /Applications/Orbit.app
+            ```
+
+            You only have to do this once per installed version. If you'd rather not
+            trust a prebuilt binary, [build from source](https://github.com/hector-mendoza/orbit#install)
+            instead — it takes one command.
+
+            ### After installing
+
+            Orbit needs the Claude Code hooks to receive status. From a clone of the repo:
+
+            ```bash
+            npm run install-hooks
+            ```
+
+            Then restart any running Claude Code sessions.

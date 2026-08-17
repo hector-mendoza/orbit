@@ -8,12 +8,27 @@
 
 set -euo pipefail
 
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || pwd)"
 ORB_DIR="$HOME/.claude-orb"
 SETTINGS="$HOME/.claude/settings.json"
+RAW_BASE="https://raw.githubusercontent.com/hector-mendoza/orbit/main"
 
 mkdir -p "$ORB_DIR" "$HOME/.claude"
-install -m 0755 "$HERE/update-status.sh" "$ORB_DIR/update-status.sh"
+
+# Normally the writer script sits next to this one. But people who installed the prebuilt
+# app have no clone, so this has to work when piped straight from curl too — in that case
+# fetch the writer from the repo instead of failing.
+SRC="$HERE/update-status.sh"
+if [ ! -f "$SRC" ]; then
+  echo "update-status.sh not found locally; downloading it"
+  SRC="$(mktemp)"
+  if ! curl -fsSL "$RAW_BASE/scripts/update-status.sh" -o "$SRC"; then
+    echo "error: could not download update-status.sh from $RAW_BASE" >&2
+    exit 1
+  fi
+fi
+
+install -m 0755 "$SRC" "$ORB_DIR/update-status.sh"
 echo "installed $ORB_DIR/update-status.sh"
 
 # Seed a status file so the orb has something to read on first launch.
