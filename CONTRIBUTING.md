@@ -107,6 +107,15 @@ cat ~/.claude-orb/status.json
 Worth testing: empty stdin, malformed JSON, a missing transcript, and a transcript that
 gets truncated mid-line.
 
+## Third-party work
+
+If a contribution derives from someone else's artwork or code — a skin traced from an
+existing design, a snippet lifted from another project — add it to
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) with the source, the license, and what
+exactly was used. Most permissive licenses require their copyright notice to travel with
+the work, so this isn't just courtesy. Please also check the license actually permits
+reuse before opening the PR.
+
 ## Style
 
 - Match the surrounding code; there's no linter for the JS beyond a parse check.

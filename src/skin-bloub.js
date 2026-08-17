@@ -1,5 +1,10 @@
 /* Skin: bloub — ink cloud (smooth).
  *
+ * Derived from "bloub" by Jérémy Perret (MIT) — https://github.com/jeremy-prt/bloub —
+ * itself an SVG recreation of the x.ai bot avatar. The cloud path data below is that
+ * project's artwork, used verbatim; the eye proportions, drift and blink are measured
+ * from it. See THIRD_PARTY_NOTICES.md for the full license text.
+ *
  * Unlike the other skins this one is NOT pixel art: it fills the actual path from the
  * reference SVG (bloub-nuage-attentif-encre-anime.svg) with antialiasing, so the cloud
  * lobes stay smooth at any size. It declares `smooth: true`, which makes the driver draw

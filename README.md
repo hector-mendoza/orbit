@@ -239,9 +239,30 @@ skin is genuinely one small file.
 
 ## Credits
 
-The `bloub` skin is based on an ink-cloud avatar SVG; the cloud silhouette is that
-artwork's own path data.
+The **`bloub`** skin is derived from [**bloub** by Jérémy Perret](https://github.com/jeremy-prt/bloub)
+(MIT) — an SVG recreation of the x.ai bot avatar. The cloud silhouette is that project's
+own vector path data, used verbatim; the eye proportions, independent drift and vertical
+blink are measured from it. Orbit adds the state mapping and a rim light so a near-black
+body stays visible on a dark desktop.
+
+Because bloub is itself a recreation of the x.ai bot avatar, that skin's shape ultimately
+derives from xAI's mascot design. Orbit is not affiliated with or endorsed by xAI.
+
+Full license texts for bundled third-party work: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+## Support
+
+Orbit is free and open source under the [MIT license](LICENSE), and will stay that way —
+no paid tier, no telemetry, nothing gated.
+
+A donation option is planned for people who want to chip in. It isn't set up yet:
+[`.github/FUNDING.yml`](.github/FUNDING.yml) has the entries ready but commented out, so
+no Sponsor button shows until there's a real account behind it. Until then, starring the
+repo or sending a good bug report is genuinely the most useful thing.
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE) © 2026 Hector Mendoza
+
+Bundled third-party work retains its own license — see
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

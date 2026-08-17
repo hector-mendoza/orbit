@@ -1,0 +1,16 @@
+# GitHub reads this file to show a "Sponsor" button on the repository.
+#
+# Every entry is commented out, so no button appears yet. Uncomment a line once the
+# corresponding account exists — an entry pointing at a non-existent account makes the
+# button 404, which is worse than having no button.
+#
+# github: requires a GitHub Sponsors profile: https://github.com/sponsors
+# Others need an account on that platform first.
+
+# github: [hector-mendoza]
+# ko_fi: your-handle
+# buy_me_a_coffee: your-handle
+# liberapay: your-handle
+# open_collective: your-collective
+# polar: your-handle
+# custom: ["https://example.com/donate"]
