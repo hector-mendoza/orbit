@@ -6,6 +6,9 @@
 
 **A desktop pet that shows what your Claude Code sessions are doing.**
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-8fb0f9.svg)](LICENSE)
+[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-%E2%98%95-f0a63c.svg)](https://buymeacoffee.com/hectormendoza)
+
 A small creature floats above your desktop in a transparent, always-on-top window. It
 turns amber and fidgets when a session needs you, throws confetti when one finishes, and
 dozes off when nothing is happening. It grows as you use it.
@@ -287,10 +290,11 @@ Full license texts for bundled third-party work: [THIRD_PARTY_NOTICES.md](THIRD_
 Orbit is free and open source under the [MIT license](LICENSE), and will stay that way —
 no paid tier, no telemetry, nothing gated.
 
-A donation option is planned for people who want to chip in. It isn't set up yet:
-[`.github/FUNDING.yml`](.github/FUNDING.yml) has the entries ready but commented out, so
-no Sponsor button shows until there's a real account behind it. Until then, starring the
-repo or sending a good bug report is genuinely the most useful thing.
+If it saves you from tabbing to a terminal to check whether Claude is done, you can
+[**buy me a coffee**](https://buymeacoffee.com/hectormendoza). Entirely optional — the
+whole thing works the same either way.
+
+Starring the repo or sending a good bug report is just as welcome.
 
 ## License
 
