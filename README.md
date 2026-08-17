@@ -106,7 +106,7 @@ whatever binary is running, and a `target/debug` path breaks on the next `cargo 
 | **Click** | Opens the current project in your editor |
 | **Drag** | Moves the window |
 | **Right-click** | Cycles through the skins |
-| **Tray icon** | Skin picker, Open at Login, Show orb, Quit |
+| **Tray icon** | Skin picker, Open at Login, Show orb, Buy me a coffee, Quit |
 
 There is no close button — quit from the tray.
 
@@ -291,8 +291,8 @@ Orbit is free and open source under the [MIT license](LICENSE), and will stay th
 no paid tier, no telemetry, nothing gated.
 
 If it saves you from tabbing to a terminal to check whether Claude is done, you can
-[**buy me a coffee**](https://buymeacoffee.com/hectormendoza). Entirely optional — the
-whole thing works the same either way.
+[**buy me a coffee**](https://buymeacoffee.com/hectormendoza) from the tray, or from that
+link. Entirely optional — the whole thing works the same either way.
 
 Starring the repo or sending a good bug report is just as welcome.
 
