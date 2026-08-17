@@ -17,6 +17,7 @@ const SKINS: [(&str, &str); 4] = [
     ("bloub", "Bloub (ink)"),
 ];
 const DEFAULT_SKIN: &str = "planet";
+const SUPPORT_URL: &str = "https://buymeacoffee.com/hectormendoza";
 
 /// Tray check items, kept so the ticks can be updated when the skin changes from
 /// anywhere — the tray itself, or a right-click on the window.
@@ -235,6 +236,31 @@ fn quit(app: tauri::AppHandle) {
     app.exit(0);
 }
 
+/// Opens the Buy Me a Coffee page in the default browser.
+///
+/// Same approach as `open_project`: spawn a known binary with the URL as an argument,
+/// never a shell string, so the constant URL can't pick up metacharacters from elsewhere.
+fn open_support_url() {
+    #[cfg(target_os = "macos")]
+    {
+        let _ = std::process::Command::new("open").arg(SUPPORT_URL).spawn();
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        let _ = std::process::Command::new("cmd")
+            .args(["/C", "start", "", SUPPORT_URL])
+            .spawn();
+    }
+
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        let _ = std::process::Command::new("xdg-open")
+            .arg(SUPPORT_URL)
+            .spawn();
+    }
+}
+
 fn set_autostart(app: &tauri::AppHandle, enabled: bool) -> bool {
     let manager = app.autolaunch();
     let result = if enabled {
@@ -302,9 +328,22 @@ pub fn run() {
             )?;
 
             let show = MenuItem::with_id(app, "show", "Show orb", true, None::<&str>)?;
+            let coffee = MenuItem::with_id(app, "coffee", "Buy me a coffee", true, None::<&str>)?;
             let quit_item = MenuItem::with_id(app, "quit", "Quit Orbit", true, None::<&str>)?;
             let sep = PredefinedMenuItem::separator(app)?;
-            let menu = Menu::with_items(app, &[&skin_menu, &sep, &login_item, &show, &quit_item])?;
+            let sep_support = PredefinedMenuItem::separator(app)?;
+            let menu = Menu::with_items(
+                app,
+                &[
+                    &skin_menu,
+                    &sep,
+                    &login_item,
+                    &show,
+                    &sep_support,
+                    &coffee,
+                    &quit_item,
+                ],
+            )?;
 
             app.manage(SkinMenu(Mutex::new(skin_items)));
 
@@ -331,6 +370,7 @@ pub fn run() {
                             let _ = login_toggle.set_checked(actual);
                         }
                         "quit" => app.exit(0),
+                        "coffee" => open_support_url(),
                         "show" => {
                             if let Some(w) = app.get_webview_window("orb") {
                                 let _ = w.show();
