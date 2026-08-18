@@ -7,6 +7,9 @@
 **A desktop pet that shows what your Claude Code sessions are doing.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-8fb0f9.svg)](LICENSE)
+[![Platforms](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-8fb0f9.svg)](#platform-support)
+[![Node](https://img.shields.io/badge/node-%E2%89%A518-8fb0f9.svg)](https://nodejs.org)
+[![Built with Tauri](https://img.shields.io/badge/built%20with-Tauri-8fb0f9.svg)](https://tauri.app)
 [![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-%E2%98%95-f0a63c.svg)](https://buymeacoffee.com/hectormendoza)
 
 A small creature floats above your desktop in a transparent, always-on-top window. It
@@ -16,6 +19,43 @@ dozes off when nothing is happening. It grows as you use it.
 </div>
 
 ---
+
+## Quick start
+
+Fastest path on macOS: grab the app, then wire up the hooks.
+
+```bash
+# 1. Download Orbit.dmg from the Releases page, open it, drag Orbit to Applications
+# https://github.com/hector-mendoza/orbit/releases
+
+# 2. Register the Claude Code hooks
+curl -fsSL https://raw.githubusercontent.com/hector-mendoza/orbit/main/scripts/install.sh | bash
+
+# 3. Restart any running Claude Code sessions, then launch Orbit
+```
+
+Prefer to build it yourself, or on Windows/Linux? See [Install](#install) below.
+
+<details>
+<summary><strong>Table of contents</strong></summary>
+
+- [Quick start](#quick-start)
+- [What it does](#what-it-does)
+- [Requirements](#requirements)
+- [Install](#install)
+- [Using it](#using-it)
+- [Looks](#looks)
+- [Growth](#growth)
+- [Architecture](#architecture)
+- [The status file](#the-status-file)
+- [Developing](#developing)
+- [Platform support](#platform-support)
+- [Contributing](#contributing)
+- [Credits](#credits)
+- [Support](#support)
+- [License](#license)
+
+</details>
 
 ## What it does
 
