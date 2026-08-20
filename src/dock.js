@@ -5,10 +5,11 @@
  */
 
 const DOCK = {
-  snapPx: 52,
-  peekPx: 28,
-  dockScale: 0.52,
-  hoverScale: 0.82,
+  /** Logical CSS px — converted with monitor scale when measuring. */
+  snapPx: 48,
+  peekPx: 36,
+  dockScale: 0.55,
+  hoverScale: 0.85,
   normalW: 190,
   normalH: 152,
   compactW: 148,
@@ -20,13 +21,17 @@ const DOCK = {
 let dockEdge = /** @type {DockEdge} */ ("none");
 let dockHovered = false;
 let dockExpanded = false;
-let moveTimer = null;
 let compactMode = false;
 let hideProject = false;
 
+/** Ignore move events caused by our own setPosition/setSize. */
+let suppressMoves = 0;
+let dragPollTimer = null;
+let settleTimer = null;
+let lastPosKey = "";
+
 const dockRoot = document.documentElement;
-const stage = () => document.getElementById("stage");
-const hud = () => document.getElementById("hud");
+const stageEl = () => document.getElementById("stage");
 
 function dockScale() {
   if (dockExpanded || dockEdge === "none") return 1;
@@ -34,7 +39,7 @@ function dockScale() {
 }
 
 function applyDockClasses() {
-  const s = stage();
+  const s = stageEl();
   if (!s) return;
   s.classList.toggle("docked", dockEdge !== "none" && !dockExpanded);
   s.classList.toggle("docked-hover", dockEdge !== "none" && !dockExpanded && dockHovered);
@@ -62,10 +67,43 @@ function windowSize() {
     : { w: DOCK.normalW, h: DOCK.normalH };
 }
 
+function tauriApi() {
+  return window.__TAURI__ || null;
+}
+
+function currentWin() {
+  const t = tauriApi();
+  return t ? t.window.getCurrentWindow() : null;
+}
+
+function physicalPosition(x, y) {
+  const t = tauriApi();
+  if (t?.dpi?.PhysicalPosition) return new t.dpi.PhysicalPosition(x, y);
+  // Fallback shape some webview builds accept.
+  return { type: "Physical", x, y };
+}
+
+function physicalSize(w, h) {
+  const t = tauriApi();
+  if (t?.dpi?.PhysicalSize) return new t.dpi.PhysicalSize(w, h);
+  return { type: "Physical", width: w, height: h };
+}
+
+async function withSuppressedMoves(fn) {
+  suppressMoves += 1;
+  try {
+    await fn();
+  } finally {
+    // Keep suppression briefly so the resulting onMoved callbacks are ignored.
+    setTimeout(() => {
+      suppressMoves = Math.max(0, suppressMoves - 1);
+    }, 280);
+  }
+}
+
 async function getMonitor() {
-  const tauri = window.__TAURI__;
-  if (!tauri) return null;
-  const win = tauri.window.getCurrentWindow();
+  const win = currentWin();
+  if (!win) return null;
   const monitor = await win.currentMonitor();
   if (!monitor) return null;
   return {
@@ -73,14 +111,13 @@ async function getMonitor() {
     y: monitor.position.y,
     w: monitor.size.width,
     h: monitor.size.height,
-    scale: monitor.scaleFactor,
+    scale: monitor.scaleFactor || 1,
   };
 }
 
 async function getBounds() {
-  const tauri = window.__TAURI__;
-  if (!tauri) return null;
-  const win = tauri.window.getCurrentWindow();
+  const win = currentWin();
+  if (!win) return null;
   const pos = await win.outerPosition();
   const size = await win.outerSize();
   return { x: pos.x, y: pos.y, w: size.width, h: size.height };
@@ -88,15 +125,16 @@ async function getBounds() {
 
 /** Pick the nearest edge/corner within snap range. */
 function detectEdge(bounds, mon) {
+  const snap = DOCK.snapPx * mon.scale;
   const left = bounds.x - mon.x;
   const top = bounds.y - mon.y;
   const right = mon.x + mon.w - (bounds.x + bounds.w);
   const bottom = mon.y + mon.h - (bounds.y + bounds.h);
 
-  const nearLeft = left < DOCK.snapPx;
-  const nearRight = right < DOCK.snapPx;
-  const nearTop = top < DOCK.snapPx;
-  const nearBottom = bottom < DOCK.snapPx;
+  const nearLeft = left < snap;
+  const nearRight = right < snap;
+  const nearTop = top < snap;
+  const nearBottom = bottom < snap;
 
   if (nearTop && nearLeft) return "top-left";
   if (nearTop && nearRight) return "top-right";
@@ -109,10 +147,17 @@ function detectEdge(bounds, mon) {
   return "none";
 }
 
+async function setWinPos(x, y) {
+  const win = currentWin();
+  if (!win) return;
+  await withSuppressedMoves(async () => {
+    await win.setPosition(physicalPosition(Math.round(x), Math.round(y)));
+  });
+}
+
 /** Position window so only a sliver remains visible at the chosen edge. */
 async function snapToEdge(edge) {
-  const tauri = window.__TAURI__;
-  if (!tauri || edge === "none") return;
+  if (!edge || edge === "none") return;
 
   const mon = await getMonitor();
   const bounds = await getBounds();
@@ -122,43 +167,38 @@ async function snapToEdge(edge) {
   let x = bounds.x;
   let y = bounds.y;
 
-  switch (edge) {
-    case "left":
-    case "top-left":
-    case "bottom-left":
-      x = mon.x - bounds.w + peek;
-      break;
-    case "right":
-    case "top-right":
-    case "bottom-right":
-      x = mon.x + mon.w - peek;
-      break;
-    default:
-      break;
+  if (edge.includes("left") || edge === "left") {
+    x = mon.x - bounds.w + peek;
+  } else if (edge.includes("right") || edge === "right") {
+    x = mon.x + mon.w - peek;
   }
 
-  switch (edge) {
-    case "top":
-    case "top-left":
-    case "top-right":
-      y = mon.y - bounds.h + peek;
-      break;
-    case "bottom":
-    case "bottom-left":
-    case "bottom-right":
-      y = mon.y + mon.h - peek;
-      break;
-    default:
-      break;
+  if (edge.includes("top") || edge === "top") {
+    y = mon.y - bounds.h + peek;
+  } else if (edge.includes("bottom") || edge === "bottom") {
+    y = mon.y + mon.h - peek;
   }
 
-  await tauri.window.getCurrentWindow().setPosition({ x, y });
+  // Side-only docks keep the current Y, but clamp so the peek stays on-screen.
+  if (edge === "left" || edge === "right") {
+    const margin = Math.round(12 * mon.scale);
+    y = Math.min(
+      Math.max(y, mon.y + margin),
+      mon.y + mon.h - bounds.h - margin,
+    );
+  }
+  if (edge === "top" || edge === "bottom") {
+    const margin = Math.round(12 * mon.scale);
+    x = Math.min(
+      Math.max(x, mon.x + margin),
+      mon.x + mon.w - bounds.w - margin,
+    );
+  }
+
+  await setWinPos(x, y);
 }
 
 async function undock(inward = true) {
-  const tauri = window.__TAURI__;
-  if (!tauri) return;
-
   dockEdge = "none";
   dockHovered = false;
   dockExpanded = false;
@@ -171,12 +211,15 @@ async function undock(inward = true) {
       const margin = Math.round(16 * mon.scale);
       let x = bounds.x;
       let y = bounds.y;
-      // Nudge fully on-screen
       if (x < mon.x + margin) x = mon.x + margin;
       if (y < mon.y + margin) y = mon.y + margin;
-      if (x + bounds.w > mon.x + mon.w - margin) x = mon.x + mon.w - bounds.w - margin;
-      if (y + bounds.h > mon.y + mon.h - margin) y = mon.y + mon.h - bounds.h - margin;
-      await tauri.window.getCurrentWindow().setPosition({ x, y });
+      if (x + bounds.w > mon.x + mon.w - margin) {
+        x = mon.x + mon.w - bounds.w - margin;
+      }
+      if (y + bounds.h > mon.y + mon.h - margin) {
+        y = mon.y + mon.h - bounds.h - margin;
+      }
+      await setWinPos(x, y);
     }
   }
 
@@ -184,7 +227,7 @@ async function undock(inward = true) {
 }
 
 async function tryDock() {
-  if (dockExpanded) return;
+  if (dockExpanded || suppressMoves > 0) return;
   const mon = await getMonitor();
   const bounds = await getBounds();
   if (!mon || !bounds) return;
@@ -195,50 +238,132 @@ async function tryDock() {
     return;
   }
 
+  if (edge === dockEdge) {
+    // Already docked on this edge — just ensure peek position is correct.
+    await snapToEdge(edge);
+    return;
+  }
+
   dockEdge = edge;
   dockHovered = false;
+  dockExpanded = false;
   applyDockClasses();
   await snapToEdge(edge);
   persistDock(edge);
 }
 
 function persistDock(edge) {
-  const tauri = window.__TAURI__;
-  if (tauri) tauri.core.invoke("set_dock_edge", { edge }).catch(() => {});
+  const t = tauriApi();
+  if (t) t.core.invoke("set_dock_edge", { edge }).catch(() => {});
 }
 
 async function applyWindowSize() {
-  const tauri = window.__TAURI__;
-  if (!tauri) return;
+  const win = currentWin();
+  if (!win) return;
   const { w, h } = windowSize();
+  const scale = (await getMonitor())?.scale || window.devicePixelRatio || 1;
   try {
-    const win = tauri.window.getCurrentWindow();
-    await win.setSize({ width: w, height: h });
-  } catch {
-    // CSS compact mode still applies if native resize is unavailable.
+    await withSuppressedMoves(async () => {
+      // Logical size matches tauri.conf.json units; PhysicalSize needs px * dpr.
+      const t = tauriApi();
+      if (t?.dpi?.LogicalSize) {
+        await win.setSize(new t.dpi.LogicalSize(w, h));
+      } else {
+        await win.setSize(physicalSize(Math.round(w * scale), Math.round(h * scale)));
+      }
+    });
+  } catch (err) {
+    console.warn("setSize failed", err);
   }
 }
 
-function setCompact(enabled) {
-  compactMode = !!enabled;
+/** Apply UI only — does not write config or emit (avoids tray↔JS feedback loops). */
+function applyCompact(enabled) {
+  const next = !!enabled;
+  if (compactMode === next) {
+    applyDockClasses();
+    return;
+  }
+  compactMode = next;
   applyDockClasses();
   applyWindowSize();
-  const tauri = window.__TAURI__;
-  if (tauri) tauri.core.invoke("set_compact", { enabled: compactMode }).catch(() => {});
+}
+
+function applyHideProject(enabled) {
+  const next = !!enabled;
+  if (hideProject === next) {
+    applyDockClasses();
+    return;
+  }
+  hideProject = next;
+  applyDockClasses();
+}
+
+function setCompact(enabled) {
+  applyCompact(enabled);
+  const t = tauriApi();
+  if (t) t.core.invoke("set_compact", { enabled: compactMode }).catch(() => {});
 }
 
 function setHideProject(enabled) {
-  hideProject = !!enabled;
-  applyDockClasses();
-  const tauri = window.__TAURI__;
-  if (tauri) tauri.core.invoke("set_hide_project", { enabled: hideProject }).catch(() => {});
+  applyHideProject(enabled);
+  const t = tauriApi();
+  if (t) t.core.invoke("set_hide_project", { enabled: hideProject }).catch(() => {});
+}
+
+/**
+ * Native startDragging swallows mouseup in the webview. Poll position until it
+ * settles, then run dock detection.
+ */
+function notifyDragStarted() {
+  clearInterval(dragPollTimer);
+  clearTimeout(settleTimer);
+  lastPosKey = "";
+  let stableHits = 0;
+
+  dragPollTimer = setInterval(async () => {
+    if (suppressMoves > 0) return;
+    try {
+      const b = await getBounds();
+      if (!b) return;
+      const key = `${b.x},${b.y}`;
+      if (key === lastPosKey) {
+        stableHits += 1;
+        if (stableHits >= 3) {
+          clearInterval(dragPollTimer);
+          dragPollTimer = null;
+          tryDock();
+        }
+      } else {
+        lastPosKey = key;
+        stableHits = 0;
+      }
+    } catch {
+      /* ignore transient IPC errors mid-drag */
+    }
+  }, 80);
+
+  // Safety stop — don't poll forever if the window never settles.
+  settleTimer = setTimeout(() => {
+    if (dragPollTimer) {
+      clearInterval(dragPollTimer);
+      dragPollTimer = null;
+      tryDock();
+    }
+  }, 4000);
+}
+
+function scheduleDockCheck() {
+  if (suppressMoves > 0 || dockExpanded) return;
+  clearTimeout(settleTimer);
+  settleTimer = setTimeout(() => tryDock(), 140);
 }
 
 function initDock() {
-  const tauri = window.__TAURI__;
-  if (!tauri) return;
+  const t = tauriApi();
+  if (!t) return;
 
-  const s = stage();
+  const s = stageEl();
   if (!s) return;
 
   s.addEventListener("mouseenter", () => {
@@ -255,25 +380,20 @@ function initDock() {
     }
   });
 
-  // Debounced dock check after window moves (drag end).
+  // Best-effort: some builds deliver onMoved; drag-poll covers the rest.
   try {
-    const win = tauri.window.getCurrentWindow();
-    if (typeof win.onMoved === "function") {
-      win.onMoved(() => {
-        if (dockExpanded) return;
-        clearTimeout(moveTimer);
-        moveTimer = setTimeout(() => tryDock(), 120);
-      });
+    const win = currentWin();
+    if (win && typeof win.onMoved === "function") {
+      win.onMoved(() => scheduleDockCheck());
     }
   } catch {
-    // Fallback: check dock state on pointer release after drag threshold.
+    /* drag poll is the primary path */
   }
 
-  // Load persisted prefs
   Promise.all([
-    tauri.core.invoke("get_compact").catch(() => false),
-    tauri.core.invoke("get_hide_project").catch(() => false),
-    tauri.core.invoke("get_dock_edge").catch(() => "none"),
+    t.core.invoke("get_compact").catch(() => false),
+    t.core.invoke("get_hide_project").catch(() => false),
+    t.core.invoke("get_dock_edge").catch(() => "none"),
   ]).then(([compact, hide, edge]) => {
     compactMode = !!compact;
     hideProject = !!hide;
@@ -287,8 +407,9 @@ function initDock() {
     });
   });
 
-  tauri.event.listen("compact-changed", (e) => setCompact(e.payload));
-  tauri.event.listen("hide-project-changed", (e) => setHideProject(e.payload));
+  // Apply-only handlers — Rust already persisted; do not invoke back.
+  t.event.listen("compact-changed", (e) => applyCompact(e.payload));
+  t.event.listen("hide-project-changed", (e) => applyHideProject(e.payload));
 }
 
 /** Call from click handler: restore full size when docked, otherwise pass through. */
@@ -303,11 +424,11 @@ function handleDockClick(onNormalClick) {
   return onNormalClick();
 }
 
-// Export for orb.js
 window.OrbitDock = {
   initDock,
   handleDockClick,
   setCompact,
   setHideProject,
+  notifyDragStarted,
   isDocked: () => dockEdge !== "none" && !dockExpanded,
 };

@@ -1,109 +1,100 @@
-/* Skin: gloop — wobbly slime blob (smooth).
+/* Skin: gloop — glossy ink slime (smooth / HD).
  *
- * A cousin of bloub: same dark-body / light-eye language, but a softer amoeba silhouette
- * with dripping tendrils and floating bubble particles when working.
+ * Same finish language as bloub: organic multi-lobe Path2D silhouette, dark body,
+ * pale capsule eyes, state-coloured rim. Adds molten drip lobes and rising sheen
+ * bubbles when the session is active.
  */
 
 SKINS.gloop = (() => {
   const CX = 44;
-  const CY = 30;
-  const BASE_R = 18;
-  const INK = "#121018";
-  const GLOW_INK = "#1a1524";
+  const CY = 31;
+  const BASE_R = 19;
+  const INK = "#14131a";
+  const EYE = "#f9f9f9";
 
-  /** Soft blob centred at origin in a 100-unit box. */
-  function blobPath(wobble) {
-    const p = new Path2D();
-    const pts = 12;
-    p.moveTo(0, -42 + wobble * 3);
-    for (let i = 0; i <= pts; i++) {
-      const a = (i / pts) * Math.PI * 2 - Math.PI / 2;
-      const wob =
-        1 +
-        Math.sin(a * 3 + wobble * 2) * 0.08 +
-        Math.sin(a * 5 - wobble) * 0.05;
-      const rx = 38 * wob;
-      const ry = 34 * (1 + Math.sin(a * 2 + wobble) * 0.06);
-      const x = Math.cos(a) * rx;
-      const y = Math.sin(a) * ry;
-      if (i === 0) p.moveTo(x, y);
-      else p.lineTo(x, y);
-    }
-    p.closePath();
-    return p;
-  }
+  // Hand-authored lobe cloud in a ~200-unit box, centred near origin — same approach
+  // as bloub's SVG path, so antialiasing keeps the silhouette silky at any size.
+  const BODY_D =
+    "M-6,-48 C18,-52 42,-40 52,-22 C62,-4 58,18 46,34 C38,46 28,54 12,58 " +
+    "C4,60 -2,62 -8,66 C-12,70 -10,78 -4,80 C2,82 4,88 -2,90 C-10,92 -22,86 -28,76 " +
+    "C-34,66 -42,58 -54,48 C-68,36 -74,18 -70,-2 C-66,-22 -52,-40 -32,-48 " +
+    "C-22,-52 -14,-50 -6,-48 Z";
 
-  /** Small drip hanging off the bottom edge. */
-  function drawDrip(ctx, cx, cy, r, now, i, state) {
-    if (state === "idle") return;
-    const phase = now / 900 + i * 1.7;
-    const hang = r * (0.35 + (Math.sin(phase) + 1) * 0.12);
-    const dx = (i - 1) * r * 0.28;
-    const dropY = cy + r * 0.55 + hang * 0.5;
-    const dropR = r * (0.07 + Math.sin(phase * 1.3) * 0.02);
+  const body = new Path2D(BODY_D);
+  const SRC_R = 72;
+  const SRC_CX = -8;
+  const SRC_CY = 16;
 
-    ctx.beginPath();
-    ctx.moveTo(cx + dx - dropR * 0.6, cy + r * 0.45);
-    ctx.quadraticCurveTo(cx + dx, dropY, cx + dx + dropR * 0.6, cy + r * 0.45);
-    ctx.fillStyle = INK;
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(cx + dx, dropY + dropR * 0.8, dropR, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  /** Rising bubbles when the session is active. */
   function drawBubbles(ctx, cx, cy, r, cfg, state, now) {
-    if (state !== "working" && state !== "waiting") return;
-    const count = state === "working" ? 5 : 3;
-    for (let i = 0; i < count; i++) {
-      const t = (now / 1800 + i * 0.31) % 1;
-      const bx = cx + Math.sin(i * 2.1 + now / 2400) * r * 0.55;
-      const by = cy + r * 0.2 - t * r * 1.1;
-      const br = r * (0.04 + (i % 2) * 0.015);
+    if (state === "idle") return;
+    const n = state === "working" ? 7 : state === "waiting" ? 4 : 3;
+    for (let i = 0; i < n; i++) {
+      const t = (now / 2200 + i * 0.17) % 1;
+      const bx = cx + Math.sin(i * 2.3 + now / 2600) * r * 0.55;
+      const by = cy + r * 0.35 - t * r * 1.35;
+      const br = r * (0.045 + (i % 3) * 0.012) * (1 - t * 0.3);
+      ctx.save();
       ctx.globalAlpha = (1 - t) * 0.55;
       ctx.strokeStyle = cfg.rim;
-      ctx.lineWidth = 0.8;
+      ctx.lineWidth = 0.9;
       ctx.beginPath();
       ctx.arc(bx, by, br, 0, Math.PI * 2);
       ctx.stroke();
+      // Tiny specular on each bubble.
+      ctx.globalAlpha = (1 - t) * 0.35;
+      ctx.fillStyle = "#fff";
+      ctx.beginPath();
+      ctx.arc(bx - br * 0.3, by - br * 0.3, br * 0.25, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
     }
-    ctx.globalAlpha = 1;
+  }
+
+  function drawRipple(ctx, cx, cy, r, cfg, state, now) {
+    if (state !== "working" && state !== "waiting") return;
+    const pulse = ((now / 1400) % 1);
+    ctx.save();
+    ctx.globalAlpha = (1 - pulse) * 0.28;
+    ctx.strokeStyle = cfg.rim;
+    ctx.lineWidth = 1.1;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + r * 0.1, r * (0.7 + pulse * 0.45), r * (0.55 + pulse * 0.35), 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
   }
 
   return {
     label: "Gloop (slime)",
     smooth: true,
-    burstOrigin: (scale) => [CX, CY - BASE_R * scale * 0.7],
+    burstOrigin: (scale) => [CX, CY - BASE_R * scale * 0.75],
 
     draw(ctx, cfg, state, now, dt, pose) {
       const r = BASE_R * pose.scale;
+      const k = r / SRC_R;
       const cx = CX + pose.shake;
       const cy = CY + pose.bob;
-      const wobble = Math.sin(now / 1100) * (state === "working" ? 1.2 : 0.6);
 
-      const breathe = state === "idle" ? 0.006 : 0.015;
-      const sx = (1 + Math.sin(now / 1300) * breathe) / Math.sqrt(pose.squash);
+      const breathe = state === "idle" ? 0.005 : 0.014;
+      const wobble = Math.sin(now / 1100) * (state === "working" ? 0.03 : 0.015);
+      const sx = (1 + Math.sin(now / 1300) * breathe + wobble) / Math.sqrt(pose.squash);
       const sy = (1 - Math.sin(now / 1300) * breathe) * pose.squash;
 
-      const path = blobPath(wobble);
-      smoothBody(ctx, path, cx, cy, r / 38, sx, sy, 0, 0, INK, cfg.rim, 1.5 / (r / 38));
+      smoothShadow(ctx, cx, cy + r * 0.72, r * 0.55, r * 0.14, 0.3);
+      drawRipple(ctx, cx, cy, r, cfg, state, now);
 
-      // Inner sheen
-      ctx.save();
-      ctx.globalAlpha = 0.18;
-      ctx.fillStyle = GLOW_INK;
-      ctx.beginPath();
-      ctx.ellipse(cx - r * 0.15, cy - r * 0.2, r * 0.35, r * 0.25, -0.4, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
+      smoothBody(
+        ctx, body, cx, cy, k, sx, sy, SRC_CX, SRC_CY, INK, cfg.rim,
+        1.7 / (k * Math.max(sx, 0.01)),
+        { haloBlur: state === "idle" ? 12 : 20 },
+      );
 
-      drawDrip(ctx, cx, cy, r, now, 0, state);
-      drawDrip(ctx, cx, cy, r, now, 1, state);
-      drawDrip(ctx, cx, cy, r, now, 2, state);
+      smoothSheen(ctx, cx - r * 0.18, cy - r * 0.28, r * 0.32, r * 0.2, -0.55, 0.14);
       drawBubbles(ctx, cx, cy, r, cfg, state, now);
-      smoothEyes(ctx, cx, cy, r, cfg, state, now, pose);
+      smoothEyes(ctx, cx, cy - r * 0.06, r, cfg, state, now, pose, {
+        eyeColor: EYE,
+        bias: 0.08,
+        sep: 0.24,
+      });
     },
   };
 })();
