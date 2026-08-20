@@ -10,11 +10,14 @@ use tauri::{
 use tauri_plugin_autostart::ManagerExt;
 
 /// Skins the window can render, in the order the tray menu lists them.
-const SKINS: [(&str, &str); 4] = [
+const SKINS: [(&str, &str); 7] = [
     ("planet", "Planet + moon"),
     ("cat", "Cat loaf"),
     ("ghost", "Ghost"),
     ("bloub", "Bloub (ink)"),
+    ("gloop", "Gloop (slime)"),
+    ("spark", "Spark (star)"),
+    ("wisp", "Wisp (spirit)"),
 ];
 const DEFAULT_SKIN: &str = "planet";
 const SUPPORT_URL: &str = "https://buymeacoffee.com/hectormendoza";
@@ -87,6 +90,34 @@ fn read_skin() -> String {
 
 fn write_skin(name: &str) {
     write_config_key("skin", serde_json::Value::String(name.to_string()));
+}
+
+fn read_bool(key: &str, default: bool) -> bool {
+    read_config()
+        .get(key)
+        .and_then(|v| v.as_bool())
+        .unwrap_or(default)
+}
+
+fn read_dock_edge() -> String {
+    read_config()
+        .get("dock_edge")
+        .and_then(|v| v.as_str())
+        .map(str::to_owned)
+        .filter(|s| {
+            matches!(
+                s.as_str(),
+                "none" | "left"
+                    | "right"
+                    | "top"
+                    | "bottom"
+                    | "top-left"
+                    | "top-right"
+                    | "bottom-left"
+                    | "bottom-right"
+            )
+        })
+        .unwrap_or_else(|| "none".to_string())
 }
 
 /// Full cwd of the most recent session, as recorded by the hook script.
@@ -232,6 +263,51 @@ fn set_skin(app: tauri::AppHandle, name: String) {
 }
 
 #[tauri::command]
+fn get_compact() -> bool {
+    read_bool("compact", false)
+}
+
+#[tauri::command]
+fn set_compact(app: tauri::AppHandle, enabled: bool) {
+    write_config_key("compact", serde_json::Value::Bool(enabled));
+    let _ = app.emit("compact-changed", enabled);
+}
+
+#[tauri::command]
+fn get_hide_project() -> bool {
+    read_bool("hide_project", false)
+}
+
+#[tauri::command]
+fn set_hide_project(app: tauri::AppHandle, enabled: bool) {
+    write_config_key("hide_project", serde_json::Value::Bool(enabled));
+    let _ = app.emit("hide-project-changed", enabled);
+}
+
+#[tauri::command]
+fn get_dock_edge() -> String {
+    read_dock_edge()
+}
+
+#[tauri::command]
+fn set_dock_edge(edge: String) {
+    let valid = matches!(
+        edge.as_str(),
+        "none" | "left"
+            | "right"
+            | "top"
+            | "bottom"
+            | "top-left"
+            | "top-right"
+            | "bottom-left"
+            | "bottom-right"
+    );
+    if valid {
+        write_config_key("dock_edge", serde_json::Value::String(edge));
+    }
+}
+
+#[tauri::command]
 fn quit(app: tauri::AppHandle) {
     app.exit(0);
 }
@@ -304,6 +380,12 @@ pub fn run() {
             get_skin,
             set_skin,
             open_project,
+            get_compact,
+            set_compact,
+            get_hide_project,
+            set_hide_project,
+            get_dock_edge,
+            set_dock_edge,
             quit
         ])
         .setup(|app| {
@@ -345,6 +427,26 @@ pub fn run() {
                 None::<&str>,
             )?;
 
+            let compact_on = read_bool("compact", false);
+            let compact_item = CheckMenuItem::with_id(
+                app,
+                "compact",
+                "Compact size",
+                true,
+                compact_on,
+                None::<&str>,
+            )?;
+
+            let hide_project_on = read_bool("hide_project", false);
+            let hide_project_item = CheckMenuItem::with_id(
+                app,
+                "hide-project",
+                "Hide project name",
+                true,
+                hide_project_on,
+                None::<&str>,
+            )?;
+
             let show = MenuItem::with_id(app, "toggle-visible", "Hide orb", true, None::<&str>)?;
             let coffee = MenuItem::with_id(app, "coffee", "Buy me a coffee", true, None::<&str>)?;
             let quit_item = MenuItem::with_id(app, "quit", "Quit Orbit", true, None::<&str>)?;
@@ -355,6 +457,8 @@ pub fn run() {
                 &[
                     &skin_menu,
                     &sep,
+                    &compact_item,
+                    &hide_project_item,
                     &login_item,
                     &show,
                     &sep_support,
@@ -366,6 +470,8 @@ pub fn run() {
             app.manage(SkinMenu(Mutex::new(skin_items)));
 
             let login_toggle = login_item.clone();
+            let compact_toggle = compact_item.clone();
+            let hide_project_toggle = hide_project_item.clone();
             let show_toggle = show.clone();
             let mut tray = TrayIconBuilder::new()
                 .icon_as_template(true)
@@ -387,6 +493,18 @@ pub fn run() {
                             let actual = set_autostart(app, !currently);
                             // Sync the tick to what actually happened, not what was asked.
                             let _ = login_toggle.set_checked(actual);
+                        }
+                        "compact" => {
+                            let currently = read_bool("compact", false);
+                            let next = !currently;
+                            set_compact(app.clone(), next);
+                            let _ = compact_toggle.set_checked(next);
+                        }
+                        "hide-project" => {
+                            let currently = read_bool("hide_project", false);
+                            let next = !currently;
+                            set_hide_project(app.clone(), next);
+                            let _ = hide_project_toggle.set_checked(next);
                         }
                         "quit" => app.exit(0),
                         "coffee" => open_support_url(),

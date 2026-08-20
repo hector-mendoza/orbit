@@ -177,7 +177,7 @@ function ingest(payload) {
 // ------------------------------------------------------------------- wiring up
 
 const tauri = window.__TAURI__;
-const SKIN_ORDER = ["planet", "cat", "ghost", "bloub"];
+const SKIN_ORDER = ["planet", "cat", "ghost", "bloub", "gloop", "spark", "wisp"];
 
 async function poll() {
   try {
@@ -235,16 +235,22 @@ if (tauri) {
   });
 
   wirePointer(async () => {
+    const handled = window.OrbitDock?.handleDockClick(() => false);
+    if (handled) {
+      poke();
+      return;
+    }
     poke();
     try {
       const opened = await tauri.core.invoke("open_project");
-      // Brief confirmation; the next poll restores the real state text.
       hudState.textContent = `opening ${opened}`;
     } catch (err) {
       console.error("open_project failed", err);
       hudState.textContent = "no project";
     }
   });
+
+  window.OrbitDock?.initDock();
 
   // Rust owns the persisted setting; it broadcasts whenever it changes so the tray
   // check marks and the window can never disagree.
