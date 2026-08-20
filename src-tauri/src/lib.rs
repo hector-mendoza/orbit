@@ -272,6 +272,9 @@ fn get_compact() -> bool {
 
 #[tauri::command]
 fn set_compact(app: tauri::AppHandle, enabled: bool) {
+    if read_bool("compact", false) == enabled {
+        return;
+    }
     write_config_key("compact", serde_json::Value::Bool(enabled));
     let _ = app.emit("compact-changed", enabled);
 }
@@ -283,6 +286,9 @@ fn get_hide_project() -> bool {
 
 #[tauri::command]
 fn set_hide_project(app: tauri::AppHandle, enabled: bool) {
+    if read_bool("hide_project", false) == enabled {
+        return;
+    }
     write_config_key("hide_project", serde_json::Value::Bool(enabled));
     let _ = app.emit("hide-project-changed", enabled);
 }

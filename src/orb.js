@@ -216,7 +216,10 @@ function wirePointer(onClick) {
       dragging = true;
       // Native drag takes over from here; the webview stops seeing pointer events, so
       // `pressed` is reset by the next mousedown rather than by a mouseup.
-      if (tauri) tauri.window.getCurrentWindow().startDragging();
+      if (tauri) {
+        window.OrbitDock?.notifyDragStarted?.();
+        tauri.window.getCurrentWindow().startDragging();
+      }
     }
   });
 
