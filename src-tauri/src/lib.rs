@@ -99,24 +99,27 @@ fn read_bool(key: &str, default: bool) -> bool {
         .unwrap_or(default)
 }
 
+fn is_valid_dock_edge(edge: &str) -> bool {
+    matches!(
+        edge,
+        "none"
+            | "left"
+            | "right"
+            | "top"
+            | "bottom"
+            | "top-left"
+            | "top-right"
+            | "bottom-left"
+            | "bottom-right"
+    )
+}
+
 fn read_dock_edge() -> String {
     read_config()
         .get("dock_edge")
         .and_then(|v| v.as_str())
         .map(str::to_owned)
-        .filter(|s| {
-            matches!(
-                s.as_str(),
-                "none" | "left"
-                    | "right"
-                    | "top"
-                    | "bottom"
-                    | "top-left"
-                    | "top-right"
-                    | "bottom-left"
-                    | "bottom-right"
-            )
-        })
+        .filter(|s| is_valid_dock_edge(s))
         .unwrap_or_else(|| "none".to_string())
 }
 
@@ -291,18 +294,7 @@ fn get_dock_edge() -> String {
 
 #[tauri::command]
 fn set_dock_edge(edge: String) {
-    let valid = matches!(
-        edge.as_str(),
-        "none" | "left"
-            | "right"
-            | "top"
-            | "bottom"
-            | "top-left"
-            | "top-right"
-            | "bottom-left"
-            | "bottom-right"
-    );
-    if valid {
+    if is_valid_dock_edge(&edge) {
         write_config_key("dock_edge", serde_json::Value::String(edge));
     }
 }
