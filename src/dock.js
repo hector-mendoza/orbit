@@ -24,7 +24,7 @@ let moveTimer = null;
 let compactMode = false;
 let hideProject = false;
 
-const root = document.documentElement;
+const dockRoot = document.documentElement;
 const stage = () => document.getElementById("stage");
 const hud = () => document.getElementById("hud");
 
@@ -39,9 +39,9 @@ function applyDockClasses() {
   s.classList.toggle("docked", dockEdge !== "none" && !dockExpanded);
   s.classList.toggle("docked-hover", dockEdge !== "none" && !dockExpanded && dockHovered);
   s.classList.toggle("docked-expanded", dockExpanded);
-  root.classList.toggle("compact", compactMode);
-  root.classList.toggle("hide-project", hideProject);
-  root.style.setProperty("--dock-scale", String(dockScale()));
+  dockRoot.classList.toggle("compact", compactMode);
+  dockRoot.classList.toggle("hide-project", hideProject);
+  dockRoot.style.setProperty("--dock-scale", String(dockScale()));
 
   const origins = {
     left: "left center",
