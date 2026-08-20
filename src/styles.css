@@ -1,6 +1,12 @@
 :root {
   --glow-color: transparent;
   --glow-strength: 0;
+  --dock-scale: 1;
+  --creature-w: 176px;
+  --creature-h: 128px;
+  --glow-size: 132px;
+  --window-w: 190px;
+  --window-h: 152px;
 }
 
 * {
@@ -15,14 +21,18 @@ body {
   height: 100%;
   background: transparent;
   overflow: hidden;
-  /* No text selection or native drag on a window that is one big drag handle. */
   user-select: none;
   -webkit-user-select: none;
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
 }
 
+html.compact {
+  --creature-w: 132px;
+  --creature-h: 96px;
+  --glow-size: 98px;
+}
+
 #stage {
-  /* The whole window is the click target: click opens the project, drag moves it. */
   cursor: pointer;
   position: relative;
   width: 100%;
@@ -32,23 +42,36 @@ body {
   align-items: center;
   justify-content: center;
   gap: 2px;
+  transition: transform 220ms ease, opacity 220ms ease;
+}
+
+#stage.docked {
+  transform: scale(var(--dock-scale));
+  transform-origin: center center;
+}
+
+#stage.docked-hover {
+  transform: scale(var(--dock-scale));
+}
+
+#stage.docked-expanded {
+  transform: scale(1);
 }
 
 #creature {
   position: relative;
-  width: 176px;
-  height: 128px;
+  width: var(--creature-w);
+  height: var(--creature-h);
   display: grid;
   place-items: center;
   flex: none;
+  transition: transform 220ms ease;
 }
 
-/* Soft state glow behind the creature. Radial gradient rather than box-shadow so it
-   fades out cleanly on a transparent window with no visible edge. */
 #glow {
   position: absolute;
-  width: 132px;
-  height: 132px;
+  width: var(--glow-size);
+  height: var(--glow-size);
   border-radius: 50%;
   background: radial-gradient(
     circle,
@@ -57,24 +80,20 @@ body {
     transparent 68%
   );
   opacity: var(--glow-strength);
-  transition: opacity 400ms ease, background 400ms ease;
+  transition: opacity 400ms ease, background 400ms ease, width 220ms ease, height 220ms ease;
   pointer-events: none;
 }
 
 #orb {
   position: relative;
-  width: 176px;
-  height: 128px;
-  /* Keep the upscaled pixel art hard-edged if the compositor ever resamples it. */
+  width: var(--creature-w);
+  height: var(--creature-h);
   image-rendering: pixelated;
   pointer-events: none;
+  transition: width 220ms ease, height 220ms ease;
 }
 
-/* Project + state readout. Always visible, on its own pill so it stays legible over
-   any desktop wallpaper rather than depending on a text shadow. */
 #hud {
-  /* The canvas is taller than the creature drawn in it, so the pill has to be pulled
-     up into that empty band to sit right under the body. */
   margin-top: -30px;
   display: flex;
   align-items: baseline;
@@ -86,6 +105,32 @@ body {
   border: 1px solid color-mix(in srgb, var(--glow-color) 35%, transparent);
   pointer-events: none;
   flex: none;
+  transition: opacity 220ms ease, transform 220ms ease, max-height 220ms ease;
+}
+
+html.compact #hud {
+  margin-top: -22px;
+  padding: 2px 7px 3px;
+  gap: 4px;
+}
+
+html.hide-project #project,
+html.hide-project #dot {
+  display: none;
+}
+
+#stage.docked #hud {
+  opacity: 0;
+  transform: translateY(4px);
+  max-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+#stage.docked-hover #hud {
+  opacity: 0.85;
+  max-height: 24px;
+  padding: 2px 7px 3px;
 }
 
 #project {
@@ -96,6 +141,10 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+html.compact #project {
+  font-size: 9px;
 }
 
 #dot {
@@ -111,7 +160,10 @@ body {
   color: color-mix(in srgb, var(--glow-color) 85%, #f7f3ec);
 }
 
-/* Token count — the reason the creature is the size it is. */
+html.compact #state {
+  font-size: 8px;
+}
+
 #tokens {
   font-size: 9px;
   letter-spacing: 0.04em;
@@ -119,16 +171,16 @@ body {
   white-space: nowrap;
 }
 
-#stage:hover /* Token count — the reason the creature is the size it is. */
-#tokens {
-  font-size: 9px;
-  letter-spacing: 0.04em;
-  color: rgba(247, 243, 236, 0.45);
-  white-space: nowrap;
+html.compact #tokens {
+  font-size: 8px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #glow {
+  #glow,
+  #stage,
+  #creature,
+  #orb,
+  #hud {
     transition: none;
   }
 }
