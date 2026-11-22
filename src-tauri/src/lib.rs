@@ -73,7 +73,11 @@ fn read_merged_status() -> Option<serde_json::Value> {
 
     let mut consider = |value: serde_json::Value| {
         let ts = timestamp_sort_key(&value);
-        if best.as_ref().is_none_or(|(bts, _)| ts >= *bts) {
+        let replace = match &best {
+            None => true,
+            Some((bts, _)) => ts >= *bts,
+        };
+        if replace {
             best = Some((ts, value));
         }
     };
