@@ -1,4 +1,4 @@
-/* Orbit — pixel-art desktop pet for Claude Code session status.
+/* Orbit — pixel-art desktop pet for Claude Code and Cursor agent status.
  *
  * This file is the driver: canvas setup, reading the status file, deciding the current
  * state, and running the frame loop. The creature itself comes from a skin (skin-*.js),
@@ -113,7 +113,7 @@ const hudTokens = document.getElementById("tokens");
 let newestTs = 0; // guards against out-of-order writes from concurrent sessions
 let lastEventKey = "";
 
-function applyState(state, project) {
+function applyState(state, project, source) {
   if (state !== currentState) {
     currentState = state;
     enteredAt = performance.now();
@@ -122,7 +122,8 @@ function applyState(state, project) {
     root.style.setProperty("--glow-strength", String(cfg.strength));
   }
   hudProject.textContent = project || "no session";
-  hudState.textContent = state;
+  const src = source && source !== "claude-code" ? ` · ${source}` : "";
+  hudState.textContent = state + src;
 }
 
 function applyTokens(tokens) {
@@ -136,7 +137,7 @@ function ingest(payload) {
   const state = raw && raw.state;
 
   if (!raw || !VALID_STATES.has(state)) {
-    applyState("idle", null);
+    applyState("idle", null, null);
     applyTokens(0);
     return;
   }
@@ -157,7 +158,7 @@ function ingest(payload) {
         : Infinity;
 
   if (ageMs > IDLE_AFTER_MS) {
-    applyState("idle", raw.project);
+    applyState("idle", raw.project, raw.source);
     applyTokens(GROWTH_SOURCE === "session" ? raw.tokens : raw.tokens_total);
     return;
   }
@@ -170,7 +171,7 @@ function ingest(payload) {
   }
   lastEventKey = key;
 
-  applyState(state, raw.project);
+  applyState(state, raw.project, raw.source);
   applyTokens(GROWTH_SOURCE === "session" ? raw.tokens : raw.tokens_total);
 }
 
@@ -184,7 +185,7 @@ async function poll() {
     ingest(await tauri.core.invoke("read_status"));
   } catch (err) {
     console.error("read_status failed", err);
-    applyState("idle", null);
+    applyState("idle", null, null);
   }
 }
 

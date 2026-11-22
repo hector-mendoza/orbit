@@ -7,7 +7,8 @@ a new creature is genuinely easy.
 
 ```bash
 npm install
-npm run install-hooks    # registers the Claude Code hooks (backs up settings.json first)
+npm run install-hooks    # Claude Code + Cursor hooks (backs up settings first)
+npm run test:status      # status writer unit tests
 npm run dev
 ```
 

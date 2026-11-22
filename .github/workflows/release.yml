@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag to build and release (e.g. v0.1.0)"
+        description: "Tag to build and release (e.g. v0.2.0)"
         required: true
 
 permissions:
@@ -26,8 +26,6 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          # Both targets are needed to link a universal binary, so the download works on
-          # Intel Macs as well as Apple Silicon.
           targets: aarch64-apple-darwin,x86_64-apple-darwin
 
       - uses: Swatinem/rust-cache@v2
@@ -36,12 +34,6 @@ jobs:
 
       - run: npm ci
 
-      # Builds, creates the GitHub Release, and uploads the .dmg + versioned .app.tar.gz to it.
-      #
-      # The build is UNSIGNED and NOT NOTARIZED. To change that later, add the Apple
-      # secrets to the repo and set them in `env` here — no other change is needed:
-      #   APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY,
-      #   APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID
       - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -52,36 +44,101 @@ jobs:
           prerelease: false
           args: --target universal-apple-darwin
           releaseBody: |
+            See [CHANGELOG.md](https://github.com/hector-mendoza/orbit/blob/main/CHANGELOG.md) for this release.
+
             ## Install
 
             Download the `.dmg` below, open it, and drag **Orbit** to Applications.
 
             ### macOS will say the app can't be verified
 
-            Orbit isn't signed with an Apple Developer certificate (that requires a paid
-            account), so Gatekeeper blocks it on first launch with *"Apple could not
-            verify Orbit is free of malware."* This is expected. To open it anyway:
-
-            1. Try to open Orbit once, and dismiss the warning.
-            2. **System Settings → Privacy & Security**
-            3. Scroll to the message about Orbit and click **Open Anyway**.
-
-            Or, from a terminal:
-
-            ```bash
-            xattr -dr com.apple.quarantine /Applications/Orbit.app
-            ```
-
-            You only have to do this once per installed version. If you'd rather not
-            trust a prebuilt binary, [build from source](https://github.com/hector-mendoza/orbit#install)
-            instead — it takes one command.
+            Orbit isn't signed with an Apple Developer certificate, so Gatekeeper blocks it on first launch. See the [README](https://github.com/hector-mendoza/orbit#install) for how to open it anyway.
 
             ### After installing
 
-            Orbit needs the Claude Code hooks to receive status. From a clone of the repo:
-
             ```bash
-            npm run install-hooks
+            curl -fsSL https://raw.githubusercontent.com/hector-mendoza/orbit/main/scripts/install.sh | bash
             ```
 
-            Then restart any running Claude Code sessions.
+            Restart Claude Code sessions and reload Cursor so hooks take effect.
+
+  windows:
+    name: Windows (x64)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - run: npm ci
+
+      - uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.event.inputs.tag || github.ref_name }}
+          releaseName: "Orbit ${{ github.event.inputs.tag || github.ref_name }}"
+          releaseDraft: true
+          prerelease: false
+          args: --target x86_64-pc-windows-msvc
+          releaseBody: |
+            See [CHANGELOG.md](https://github.com/hector-mendoza/orbit/blob/main/CHANGELOG.md).
+
+            Download the `.msi` or `.exe` installer below, then run:
+
+            ```powershell
+            # Git Bash or WSL
+            curl -fsSL https://raw.githubusercontent.com/hector-mendoza/orbit/main/scripts/install.sh | bash
+            ```
+
+  linux:
+    name: Linux (x64)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - run: npm ci
+
+      - uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.event.inputs.tag || github.ref_name }}
+          releaseName: "Orbit ${{ github.event.inputs.tag || github.ref_name }}"
+          releaseDraft: true
+          prerelease: false
+          releaseBody: |
+            See [CHANGELOG.md](https://github.com/hector-mendoza/orbit/blob/main/CHANGELOG.md).
+
+            Download the `.AppImage` or `.deb` below, then:
+
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/hector-mendoza/orbit/main/scripts/install.sh | bash
+            ```

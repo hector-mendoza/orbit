@@ -48,6 +48,9 @@ jobs:
       - name: shellcheck
         run: shellcheck --severity=error scripts/*.sh
 
+      - name: Status writer tests
+        run: python3 scripts/test_orbit_status_writer.py
+
   rust:
     name: Rust
     runs-on: macos-latest

@@ -1,4 +1,7 @@
 node_modules/
+__pycache__/
+*.pyc
+docs/demo-frames/
 src-tauri/target/
 src-tauri/gen/
 src-tauri/icons/orbit.iconset/
