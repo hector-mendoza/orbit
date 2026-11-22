@@ -4,17 +4,18 @@
 
 # Orbit
 
-**A desktop pet that shows what your Claude Code sessions are doing.**
+**A desktop pet that shows what your Claude Code and Cursor agent sessions are doing.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-8fb0f9.svg)](LICENSE)
-[![Platforms](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-8fb0f9.svg)](#platform-support)
+[![Platforms](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-8fb0f9.svg)](#install)
 [![Node](https://img.shields.io/badge/node-%E2%89%A518-8fb0f9.svg)](https://nodejs.org)
 [![Built with Tauri](https://img.shields.io/badge/built%20with-Tauri-8fb0f9.svg)](https://tauri.app)
-[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-%E2%98%95-f0a63c.svg)](https://buymeacoffee.com/hectormendoza)
 
-A small creature floats above your desktop in a transparent, always-on-top window. It
-turns amber and fidgets when a session needs you, throws confetti when one finishes, and
-dozes off when nothing is happening. It grows as you use it.
+![Orbit demo — working, waiting, done, and idle states](docs/orbit-demo.gif)
+
+A small creature floats on your desktop in a transparent, always-on-top window. It breathes and glows blue while an agent works, turns amber when something needs you, throws confetti when a run finishes, and dozes when nothing is happening. It grows as you spend tokens.
+
+[Download releases](https://github.com/hector-mendoza/orbit/releases) · [Quick start](#quick-start) · [Cursor setup](#cursor-agent-support)
 
 </div>
 
@@ -22,324 +23,196 @@ dozes off when nothing is happening. It grows as you use it.
 
 ## Quick start
 
-Fastest path on macOS: grab the app, then wire up the hooks.
+**macOS (prebuilt app)**
 
 ```bash
-# 1. Download Orbit.dmg from the Releases page, open it, drag Orbit to Applications
-# https://github.com/hector-mendoza/orbit/releases
+# 1. Download Orbit.dmg from Releases and drag Orbit to Applications
+#    https://github.com/hector-mendoza/orbit/releases
 
-# 2. Register the Claude Code hooks
+# 2. Wire up Claude Code + Cursor hooks
 curl -fsSL https://raw.githubusercontent.com/hector-mendoza/orbit/main/scripts/install.sh | bash
 
-# 3. Restart any running Claude Code sessions, then launch Orbit
+# 3. Restart Claude Code sessions, reload Cursor, launch Orbit
 ```
 
-Prefer to build it yourself, or on Windows/Linux? See [Install](#install) below.
-
-<details>
-<summary><strong>Table of contents</strong></summary>
-
-- [Quick start](#quick-start)
-- [What it does](#what-it-does)
-- [Requirements](#requirements)
-- [Install](#install)
-- [Using it](#using-it)
-- [Looks](#looks)
-- [Growth](#growth)
-- [Architecture](#architecture)
-- [The status file](#the-status-file)
-- [Developing](#developing)
-- [Platform support](#platform-support)
-- [Contributing](#contributing)
-- [Credits](#credits)
-- [Support](#support)
-- [License](#license)
-
-</details>
-
-## What it does
-
-- **Shows the most recent state across all your sessions** — one pet, not one per session.
-- **Four states**: working, waiting on you, done, idle.
-- **Grows with tokens spent** — tiny on first run, fully grown after months of use.
-- **Click it** to open the current project in your editor.
-- **Four looks**, switchable from the tray.
-- Lives in the menu bar. No Dock icon, no window chrome, no taskbar entry.
-
-| State     | Trigger                     | Behaviour                                                  |
-| --------- | --------------------------- | ---------------------------------------------------------- |
-| `working` | `UserPromptSubmit` hook     | Gentle breathing bob, occasional glance to one side        |
-| `waiting` | `Notification` hook         | Eyes widen, bursts of shake, amber glow                    |
-| `done`    | `Stop` hook                 | Happy hops, a confetti burst, green glow                   |
-| `idle`    | No update in the last 5 min | Still, with a slow blink                                   |
-
-## Requirements
-
-- **macOS** (Windows and Linux are wired up but untested — see [Platform support](#platform-support))
-- **Node.js** 18+
-- **Rust** — Tauri compiles a native shell:
-  ```bash
-  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-  ```
-- **Claude Code**, for the hooks to fire
-
-## Install
-
-### Download the app
-
-Grab the `.dmg` from [**Releases**](https://github.com/hector-mendoza/orbit/releases),
-open it, and drag Orbit to Applications. Then wire up the hooks:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/hector-mendoza/orbit/main/scripts/install.sh | bash
-```
-
-That registers the Claude Code hooks and downloads the status writer into
-`~/.claude-orb/`. **Restart any running Claude Code sessions** afterwards.
-
-> [!IMPORTANT]
-> **macOS will say the app can't be verified.** Orbit isn't signed with an Apple
-> Developer certificate — that needs a paid account — so Gatekeeper blocks it the first
-> time with *"Apple could not verify Orbit is free of malware."*
->
-> To open it anyway: try to open Orbit once and dismiss the warning, then go to
-> **System Settings → Privacy & Security**, scroll to the message about Orbit, and click
-> **Open Anyway**. Or from a terminal:
->
-> ```bash
-> xattr -dr com.apple.quarantine /Applications/Orbit.app
-> ```
->
-> Once per installed version. If you'd rather not trust a prebuilt binary, building from
-> source below avoids the question entirely.
-
-### Or build from source
+**From source (any OS)**
 
 ```bash
 git clone https://github.com/hector-mendoza/orbit.git
 cd orbit
 npm install
-npm run install-hooks    # writes ~/.claude-orb/ and registers the Claude Code hooks
-npm run dev              # first build takes a few minutes; later runs are fast
+npm run install-hooks
+npm run dev
 ```
 
-Either way, `install-hooks` appends to whatever hooks you already have in
-`~/.claude/settings.json`, backs the file up first, and is safe to re-run — Orbit's own
-entries are replaced rather than duplicated. **Restart any running Claude Code sessions**
-so they pick the hooks up.
+## Features
 
-For a real app you can launch without a terminal:
+- **One pet, all sessions** — merges Claude Code and Cursor activity; shows whichever source updated most recently.
+- **Four states** — `working`, `waiting`, `done`, `idle` (auto-idle after 5 minutes with no update).
+- **Growth** — size tracks token usage (log scale; cache reads excluded).
+- **Seven skins** — planet, cat, ghost, bloub, gloop, spark, wisp (tray or right-click to switch).
+- **Click to open project** — opens `cwd` in Cursor, VS Code, or your configured editor.
+- **Menu bar / tray only** — no dock icon, no window chrome; optional Open at Login.
+- **Private** — reads local hook files only; no telemetry, no network calls for status.
+
+| State | Typical trigger | Pet behaviour |
+| ----- | --------------- | ------------- |
+| `working` | Prompt submitted, tools running | Gentle bob, soft blue glow |
+| `waiting` | Permission / approval hooks | Amber glow, shake |
+| `done` | Agent turn finished | Confetti, green glow |
+| `idle` | No update for 5+ minutes | Still, slow blink |
+
+## Install
+
+### macOS
+
+1. Download **`Orbit.dmg`** from [Releases](https://github.com/hector-mendoza/orbit/releases).
+2. Open the DMG and drag **Orbit** to Applications.
+3. Run the hook installer (see [Quick start](#quick-start)).
+
+> **Gatekeeper:** The app is unsigned. On first launch, use **System Settings → Privacy & Security → Open Anyway**, or:
+>
+> ```bash
+> xattr -dr com.apple.quarantine /Applications/Orbit.app
+> ```
+
+### Windows
+
+1. Download **`Orbit_*_x64-setup.exe`** or **`.msi`** from [Releases](https://github.com/hector-mendoza/orbit/releases).
+2. Install, then register hooks in **Git Bash** or **WSL**:
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/hector-mendoza/orbit/main/scripts/install.sh | bash
+   ```
+3. Restart Claude Code; reload Cursor.
+
+### Linux
+
+1. Download **`.AppImage`** or **`.deb`** from Releases.
+2. Install or run the AppImage, then:
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/hector-mendoza/orbit/main/scripts/install.sh | bash
+   ```
+
+### Build from source
+
+Requires **Node 18+**, **Rust** (for Tauri), and platform [Tauri prerequisites](https://tauri.app/start/prerequisites/).
 
 ```bash
-npm run build
-cp -R src-tauri/target/release/bundle/macos/Orbit.app /Applications/
+npm install
+npm run install-hooks
+npm run build          # release binary in src-tauri/target/release/bundle/
 ```
 
-Then launch it from `/Applications` and turn on **Open at Login** from the tray. Enable it
-from the installed app rather than `npm run dev` — the login item records the path of
-whatever binary is running, and a `target/debug` path breaks on the next `cargo clean`.
+Prefer **`npm run dev`** while iterating; use the installed app (not `target/debug`) for **Open at Login**.
 
-## Using it
+## How Orbit detects sessions
 
-| Action | Result |
-| --- | --- |
-| **Click** | Opens the current project in your editor |
-| **Drag** | Moves the window |
-| **Right-click** | Cycles through the skins |
-| **Tray icon** | Skin picker, Open at Login, Hide / Show orb, Buy me a coffee, Quit |
+Orbit does not talk to Claude or Cursor over the network. **Lifecycle hooks** run small scripts on your machine and write JSON status files under `~/.claude-orb/`.
 
-There is no close button. Hide the orb from the tray if you want it gone without
-quitting; quit from the tray to stop the process.
+### Pluggable sources
 
-Click and drag are told apart by how far the pointer travels while held (4px threshold).
-Tauri's `data-tauri-drag-region` can't be used for this: it begins a native drag on
-mousedown and swallows the click entirely.
+| Source | Config | Writer |
+| ------ | ------ | ------ |
+| **Claude Code** | `~/.claude/settings.json` hooks | `~/.claude-orb/update-status.sh` (`claude-code`) |
+| **Cursor** | `~/.cursor/hooks.json` | same script (`cursor`) |
+| *Future* | add `~/.claude-orb/sources/<name>.json` | your hook script |
 
-**Editor preference** for click-to-open, in order: an `editor` name in
-`~/.claude-orb/config.json`, then Cursor, then VS Code, then whatever the OS does with a
-folder. Set it explicitly if you like — config writes merge, so this won't disturb `skin`:
+The app reads `~/.claude-orb/sources/*.json`, picks the **newest `timestamp`**, and shows that state. Legacy `status.json` is still read for compatibility.
 
-```json
-{ "editor": "Visual Studio Code" }
+### Claude Code
+
+Hooks on `UserPromptSubmit`, `Notification`, and `Stop` map to `working`, `waiting`, and `done`. The hook payload (stdin JSON) supplies `session_id`, `cwd`, and `transcript_path` for token growth.
+
+### Cursor agent support
+
+[Cursor hooks](https://cursor.com/docs/hooks) (`~/.cursor/hooks.json`) are registered by `install.sh`:
+
+- **Working** — `beforeSubmitPrompt`, `preToolUse`, `postToolUse`, `afterFileEdit`, tool completion hooks, etc.
+- **Waiting** — `beforeShellExecution`, `beforeMCPExecution`, `beforeReadFile` (approval-style steps).
+- **Done** — `stop`, `sessionEnd`.
+
+**Limits:**
+
+- Hook commands use **`bash`** — on Windows use Git Bash/WSL.
+- **Cloud Agents** on remote VMs update status on *that* machine, not your desktop pet unless you run Orbit there too.
+- **`transcript_path`** must be enabled in Cursor for token growth from Cursor sessions (same idea as Claude transcripts).
+- Cursor must load hooks (reload window after install).
+
+Re-register Cursor only:
+
+```bash
+python3 scripts/install-cursor-hooks.py
 ```
 
-## Looks
+## Configuration
 
-Switch from the tray under **Look**, or right-click the window to cycle. The choice
-persists in `~/.claude-orb/config.json`.
+All settings live in `~/.claude-orb/config.json` (merged per key):
 
-| Skin | What carries the state, beyond colour |
-| --- | --- |
-| `planet` *(default)* | A moon orbits — fast when working, parked overhead when waiting, crawling when idle |
-| `cat` | Ears perk, pin flat, or fold; tail flicks and stands straight up when pleased |
-| `ghost` | A rippling hem — calm, agitated, or barely moving; rears up tall when waiting |
-| `bloub` | Ink cloud, from a reference SVG. The only **smooth** skin — see [Architecture](#architecture) |
+| Key | Default | Purpose |
+| --- | ------- | ------- |
+| `skin` | `planet` | Active creature skin |
+| `compact` | `false` | Smaller window |
+| `hide_project` | `false` | Hide project name in HUD |
+| `dock_edge` | `none` | Snap to screen edge |
+| `editor` | *(auto)* | App name/binary for click-to-open |
 
-Each skin deliberately has one moving feature that signals state *without* relying on
-colour, so it reads at a glance from across the room.
+Growth curve constants are in [`src/config.js`](src/config.js) (`GROWTH_SOURCE`, `GROWTH_RANGE`).
 
-## Growth
-
-The creature starts small and grows with tokens spent.
-
-Hook payloads carry no token counts, but they do carry `transcript_path`, and the
-assistant messages in that JSONL have `usage` blocks. `update-status.sh` tails that file
-**incrementally** — remembering a byte offset per session in `~/.claude-orb/usage.json`
-and reading only what's new — so accounting stays cheap however long a session runs. It
-handles a partially written last line (a hook can fire mid-write) and a compacted
-transcript (shorter than the stored offset ⇒ start over).
-
-Cache **reads** are excluded from the metric. They dominate the raw numbers and cost a
-fraction of the rest, so counting them would balloon the creature on long sessions
-regardless of real work done. The metric is `input + output + cache_creation`.
-
-Growth is logarithmic — linear scaling would leave it microscopic for a day, then peg at
-maximum forever. Configure in [`src/config.js`](src/config.js):
-
-| `GROWTH_SOURCE` | Counts | Range | Feel |
-| --- | --- | --- | --- |
-| `total` *(default)* | Lifetime, all sessions | 50k → 100M tokens | A pet that grows as you use it |
-| `session` | Current session only | 10k → 2M tokens | Grows as this session gets expensive |
-
-The ranges are calibrated against real transcripts: one long working session runs to well
-over a million tokens, so the lifetime scale has to span far more than the session one.
-The token count shows in the readout pill, so the size is never a mystery.
-
-## Architecture
-
-```
-src/                    the window — plain HTML/CSS/JS, no bundler
-  index.html
-  config.js             grid, palette, per-state colours, growth curve
-  render-core.js        pixel primitives, three-tone shading, faces, confetti, shared motion
-  skin-planet.js        \
-  skin-cat.js            |  one file per creature; each exposes draw() + burstOrigin()
-  skin-ghost.js          |
-  skin-bloub.js         /
-  orb.js                driver: status polling, state machine, frame loop, input
-  proto-*.html          standalone concept prototypes (not shipped in the window)
-src-tauri/              Tauri v2 shell
-  src/lib.rs            read_status / get_skin / set_skin / open_project / quit, tray menu
-  tauri.conf.json       window + bundle config
-  Info.plist            LSUIElement — keeps it out of the Dock
-scripts/
-  update-status.sh      the hook script: writes status.json from the hook's stdin payload
-  install.sh            installs it and registers the hooks
-  gen-icons.mjs         generates every app/tray icon from scratch (no image deps)
-```
-
-**Skins are pluggable.** `SKINS` is a registry; a skin provides `draw()` and
-`burstOrigin()` and inherits the state machine, growth scaling, confetti, and glow for
-free. Adding one is a new file plus a line in the tray list.
-
-**Two render paths.** Pixel-art skins draw into a low-resolution offscreen buffer that
-gets nearest-neighbour upscaled, which is what keeps them crisp. A skin that sets
-`smooth: true` (currently just `bloub`) is instead drawn straight onto the visible canvas
-at device resolution with a transform, so vector shapes stay antialiased. Routing a vector
-skin through the pixel buffer is exactly what would pixelate it.
-
-**Rust owns persisted settings.** Both the tray and the window's right-click go through
-`set_skin`, which writes the config, updates the tray checkmarks, and broadcasts a
-`skin-changed` event — so the menu and the screen can't drift apart.
-
-## The status file
-
-`~/.claude-orb/status.json`, written atomically (temp file + rename) so the window never
-reads a half-written file while polling:
+### Status file shape
 
 ```json
 {
-  "state": "done",
+  "state": "working",
+  "source": "cursor",
   "project": "orbit",
   "cwd": "/Users/you/Developer/orbit",
-  "timestamp": "2026-08-17T21:15:18Z",
-  "session_id": "abc-123",
+  "timestamp": "2026-11-22T20:15:00Z",
+  "session_id": "conv-abc",
   "tokens": 128400,
   "tokens_total": 1364395
 }
 ```
 
-Claude Code passes `session_id`, `cwd`, and `transcript_path` on **stdin** as JSON — not
-via environment variables — which is why the hook script reads stdin. Every code path in
-that script exits `0`, so a hook can never fail your session.
+## Using the pet
 
-If several sessions write at once, out-of-order writes are ignored: an older timestamp
-never replaces a newer one already on screen.
+| Action | Result |
+| --- | --- |
+| **Click** | Open project folder in editor |
+| **Drag** | Move window |
+| **Right-click** | Cycle skins |
+| **Tray** | Skins, compact, hide project name, login item, quit |
+
+## Troubleshooting
+
+| Problem | What to try |
+| ------- | ----------- |
+| Pet stuck on **idle** | Run `install.sh` again; restart Claude Code / reload Cursor; check `~/.claude-orb/sources/` updates when you prompt. |
+| **Claude** hooks missing | `npm run install-hooks`; confirm `~/.claude/settings.json` contains `# orbit-hook`. |
+| **Cursor** hooks missing | `python3 scripts/install-cursor-hooks.py`; confirm `~/.cursor/hooks.json` contains `# orbit-cursor-hook`. |
+| **Windows** hooks silent | Use Git Bash; ensure `bash` and `python3` are on PATH for Cursor. |
+| **Can't open** macOS app | Remove quarantine (`xattr` above) or build from source. |
+| Wrong **editor** on click | Set `"editor": "Cursor"` or `"Visual Studio Code"` in `config.json`. |
+| **Growth** flat | Transcript path missing or token fields empty; check hook payload has `transcript_path`. |
+
+Debug path shown in devtools: `read_status` returns the merged file path metadata in the Tauri app.
 
 ## Developing
 
-The renderer runs standalone in a browser, which is much faster than rebuilding the app:
-
 ```bash
-npm run preview     # serves src/ on :4317
+npm run preview          # http://localhost:4317 — cycles states
+# ?state=waiting&skin=cat&tokens=25000000
+npm run test:status      # status writer unit tests
+npm run lint:rust        # fmt + clippy
 ```
 
-- `http://localhost:4317/` — cycles all four states every 3.5s
-- `?state=waiting&skin=cat` — pin a state and skin
-- `?tokens=25000000` — pin a token count to test growth scaling
-- `proto-growth.html` — every skin across the whole growth curve
-- `proto-planet.html`, `proto-cat.html`, `proto-ghost.html`, `proto-bloub.html` — all four
-  states side by side. `proto-drone.html` and `proto-dino.html` are concepts that weren't
-  taken forward.
-
-Regenerate icons after changing `gen-icons.mjs`:
-
-```bash
-npm run icons
-```
-
-## Platform support
-
-| | macOS | Windows | Linux |
-| --- | --- | --- | --- |
-| Window, tray, always-on-top | ✅ | ✅ | ✅ |
-| Transparent background | ✅ | ✅ | ⚠️ needs a compositor |
-| Open at Login | ✅ | ✅ | ✅ |
-| Hidden from Dock/taskbar | ✅ | ✅ | ✅ |
-| Click to open project | ✅ | ✅ | ✅ |
-| `update-status.sh` | ✅ | ⚠️ needs bash (Git Bash/WSL) | ✅ |
-
-**Only macOS has actually been run.** The Rust resolves the home directory from `HOME` or
-`USERPROFILE`, so paths are right on all three, and the editor-opening code has per-OS
-branches. The genuinely non-portable piece is the hook script: it's bash + python3, so on
-Windows Claude Code needs a shell that has bash, or the script needs a PowerShell twin.
-
-**Open at Login** on macOS writes `~/Library/LaunchAgents/Orbit.plist` (label `Orbit`,
-pointing at the executable inside the bundle) — a registry Run key on Windows, a
-`.desktop` autostart entry on Linux.
+Architecture and skin authoring: see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Bug reports and skin contributions welcome — a new
-skin is genuinely one small file.
-
-## Credits
-
-The **`bloub`** skin is derived from [**bloub** by Jérémy Perret](https://github.com/jeremy-prt/bloub)
-(MIT) — an SVG recreation of the x.ai bot avatar. The cloud silhouette is that project's
-own vector path data, used verbatim; the eye proportions, independent drift and vertical
-blink are measured from it. Orbit adds the state mapping and a rim light so a near-black
-body stays visible on a dark desktop.
-
-Because bloub is itself a recreation of the x.ai bot avatar, that skin's shape ultimately
-derives from xAI's mascot design. Orbit is not affiliated with or endorsed by xAI.
-
-Full license texts for bundled third-party work: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-
-## Support
-
-Orbit is free and open source under the [MIT license](LICENSE), and will stay that way —
-no paid tier, no telemetry, nothing gated.
-
-If it saves you from tabbing to a terminal to check whether Claude is done, you can
-[**buy me a coffee**](https://buymeacoffee.com/hectormendoza) from the tray, or from that
-link. Entirely optional — the whole thing works the same either way.
-
-Starring the repo or sending a good bug report is just as welcome.
+PRs welcome — especially new skins (one file + tray registration). See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-[MIT](LICENSE) © 2026 Hector Mendoza
+[MIT](LICENSE) © 2026 Hector Mendoza · [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
 
-Bundled third-party work retains its own license — see
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+If Orbit saves you a trip to the terminal, you can [buy me a coffee](https://buymeacoffee.com/hectormendoza) — optional, no gates.

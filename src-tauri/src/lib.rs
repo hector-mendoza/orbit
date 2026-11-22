@@ -55,6 +55,56 @@ fn status_path() -> PathBuf {
     orb_dir().join("status.json")
 }
 
+fn sources_dir() -> PathBuf {
+    orb_dir().join("sources")
+}
+
+/// Orbit timestamps are always RFC3339 UTC (`…T…Z`); lexicographic order matches time order.
+fn timestamp_sort_key(raw: &serde_json::Value) -> String {
+    raw.get("timestamp")
+        .and_then(|t| t.as_str())
+        .map(str::to_owned)
+        .unwrap_or_default()
+}
+
+/// Merge per-source status files and legacy status.json, returning the freshest record.
+fn read_merged_status() -> Option<serde_json::Value> {
+    let mut best: Option<(String, serde_json::Value)> = None;
+
+    let mut consider = |value: serde_json::Value| {
+        let ts = timestamp_sort_key(&value);
+        let replace = match &best {
+            None => true,
+            Some((bts, _)) => ts >= *bts,
+        };
+        if replace {
+            best = Some((ts, value));
+        }
+    };
+
+    if let Ok(entries) = std::fs::read_dir(sources_dir()) {
+        for ent in entries.flatten() {
+            let path = ent.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                continue;
+            }
+            if let Ok(raw) = std::fs::read_to_string(&path) {
+                if let Ok(value) = serde_json::from_str::<serde_json::Value>(&raw) {
+                    consider(value);
+                }
+            }
+        }
+    }
+
+    if let Ok(raw) = std::fs::read_to_string(status_path()) {
+        if let Ok(value) = serde_json::from_str::<serde_json::Value>(&raw) {
+            consider(value);
+        }
+    }
+
+    best.map(|(_, v)| v)
+}
+
 fn config_path() -> PathBuf {
     orb_dir().join("config.json")
 }
@@ -125,8 +175,7 @@ fn read_dock_edge() -> String {
 
 /// Full cwd of the most recent session, as recorded by the hook script.
 fn status_cwd() -> Option<String> {
-    let raw = std::fs::read_to_string(status_path()).ok()?;
-    let value: serde_json::Value = serde_json::from_str(&raw).ok()?;
+    let value = read_merged_status()?;
     value
         .get("cwd")
         .and_then(|c| c.as_str())
@@ -230,9 +279,7 @@ fn read_status() -> StatusPayload {
         .and_then(|t| t.elapsed().ok())
         .map(|d| d.as_secs());
 
-    let status = std::fs::read_to_string(&path)
-        .ok()
-        .and_then(|raw| serde_json::from_str::<serde_json::Value>(&raw).ok());
+    let status = read_merged_status();
 
     StatusPayload {
         status,

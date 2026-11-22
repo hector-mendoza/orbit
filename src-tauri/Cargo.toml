@@ -1,7 +1,7 @@
 [package]
 name = "orbit"
-version = "0.1.1"
-description = "Always-on-top desktop pet showing Claude Code session status"
+version = "0.2.0"
+description = "Always-on-top desktop pet showing Claude Code and Cursor agent session status"
 edition = "2021"
 rust-version = "1.77"
 
